@@ -12,8 +12,8 @@ module ElasticGraph
       class ListPathSegment < ListPathSegmentSuperType
         TYPE: "list"
         FIELD: "field"
-        MATCH_FIELD: "match_field"
-        SOURCE_FIELD: "source_field"
+        MATCH_FIELD: "matchField"
+        SOURCE_FIELD: "sourceField"
 
         def self.from_hash: (::Hash[::String, untyped]) -> ListPathSegment
         def to_dumpable_hash: () -> ::Hash[::String, ::String]
