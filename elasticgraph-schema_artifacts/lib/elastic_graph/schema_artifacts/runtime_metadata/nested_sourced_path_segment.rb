@@ -16,8 +16,8 @@ module ElasticGraph
       class ListPathSegment < ::Data.define(:field, :match_field, :source_field)
         TYPE = "list"
         FIELD = "field"
-        MATCH_FIELD = "match_field"
-        SOURCE_FIELD = "source_field"
+        MATCH_FIELD = "matchField"
+        SOURCE_FIELD = "sourceField"
 
         def to_dumpable_hash
           {"type" => TYPE, FIELD => field, MATCH_FIELD => match_field, SOURCE_FIELD => source_field}

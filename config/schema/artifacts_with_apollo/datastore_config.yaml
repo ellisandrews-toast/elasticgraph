@@ -2195,7 +2195,7 @@ scripts:
 
         // No timestamp values matched the params, so return `false`.
         return false;
-  update_index_data_cb9dbfa4c50ae7a159bfa613875fdc71:
+  update_index_data_b5641816425b280ae2d1ad78dc72ffbd:
     context: update
     script:
       lang: painless
@@ -2210,7 +2210,7 @@ scripts:
           List parts = new ArrayList();
           for (Map segment : pathSegments) {
             if ("list".equals(segment.get("type"))) {
-              parts.add(pathIdentifiers[segment.source_field]);
+              parts.add(pathIdentifiers[segment.sourceField]);
             } else {
               parts.add(segment.get("field"));
             }
@@ -2257,7 +2257,7 @@ scripts:
             }
 
             if ("list".equals(segment.get("type"))) {
-              current = (Map) findInList((List) current.get(field), (String) segment.get("match_field"), (String) keyParts.get(i));
+              current = (Map) findInList((List) current.get(field), (String) segment.get("matchField"), (String) keyParts.get(i));
             } else {
               current = (Map) current.get(field);
             }

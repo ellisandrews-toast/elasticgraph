@@ -8,7 +8,7 @@ String buildNestedElementKey(List pathSegments, Map pathIdentifiers) {
   List parts = new ArrayList();
   for (Map segment : pathSegments) {
     if ("list".equals(segment.get("type"))) {
-      parts.add(pathIdentifiers[segment.source_field]);
+      parts.add(pathIdentifiers[segment.sourceField]);
     } else {
       parts.add(segment.get("field"));
     }
@@ -55,7 +55,7 @@ def navigateToNestedElement(Map source, List pathSegments, List keyParts) {
     }
 
     if ("list".equals(segment.get("type"))) {
-      current = (Map) findInList((List) current.get(field), (String) segment.get("match_field"), (String) keyParts.get(i));
+      current = (Map) findInList((List) current.get(field), (String) segment.get("matchField"), (String) keyParts.get(i));
     } else {
       current = (Map) current.get(field);
     }
