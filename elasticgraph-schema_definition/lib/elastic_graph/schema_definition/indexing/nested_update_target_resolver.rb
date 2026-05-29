@@ -6,6 +6,7 @@
 #
 # frozen_string_literal: true
 
+require "elastic_graph/schema_artifacts/runtime_metadata/nested_sourced_path_segment"
 require "elastic_graph/schema_artifacts/runtime_metadata/params"
 require "elastic_graph/schema_definition/indexing/update_target_factory"
 
@@ -120,13 +121,15 @@ module ElasticGraph
         def build_nested_sourced_paths
           resolved_chain.path_segments.map do |segment|
             if segment.embedding_field.type.list?
-              {
-                "list" => segment.embedding_field.name_in_index,
-                "match_field" => segment.match_field,
-                "source_field" => segment.source_field
-              }
+              SchemaArtifacts::RuntimeMetadata::ListPathSegment.new(
+                field: segment.embedding_field.name_in_index,
+                match_field: segment.match_field,
+                source_field: segment.source_field
+              )
             else
-              {"object" => segment.embedding_field.name_in_index}
+              SchemaArtifacts::RuntimeMetadata::ObjectPathSegment.new(
+                field: segment.embedding_field.name_in_index
+              )
             end
           end
         end

@@ -8,6 +8,7 @@
 
 require "elastic_graph/schema_artifacts/runtime_metadata/hash_dumper"
 require "elastic_graph/schema_artifacts/runtime_metadata/index_field"
+require "elastic_graph/schema_artifacts/runtime_metadata/nested_sourced_path_segment"
 require "elastic_graph/schema_artifacts/runtime_metadata/sort_field"
 
 module ElasticGraph
@@ -45,7 +46,7 @@ module ElasticGraph
             current_sources: hash[CURRENT_SOURCES] || [],
             fields_by_path: (hash[FIELDS_BY_PATH] || {}).transform_values { |h| IndexField.from_hash(h) },
             has_had_multiple_sources: hash[HAS_HAD_MULTIPLE_SOURCES] || false,
-            nested_sourced_paths: hash[NESTED_SOURCED_PATHS] || {}
+            nested_sourced_paths: (hash[NESTED_SOURCED_PATHS] || {}).transform_values { |segments| segments.map { |h| NestedSourcedPathSegment.from_hash(h) } }
           )
         end
 
@@ -56,7 +57,7 @@ module ElasticGraph
             DEFAULT_SORT_FIELDS => default_sort_fields.map(&:to_dumpable_hash),
             FIELDS_BY_PATH => HashDumper.dump_hash(fields_by_path, &:to_dumpable_hash),
             HAS_HAD_MULTIPLE_SOURCES => (true if has_had_multiple_sources),
-            NESTED_SOURCED_PATHS => nested_sourced_paths,
+            NESTED_SOURCED_PATHS => nested_sourced_paths.transform_values { |segments| segments.map(&:to_dumpable_hash) },
             ROLLOVER => rollover&.to_dumpable_hash,
             ROUTE_WITH => route_with
           }

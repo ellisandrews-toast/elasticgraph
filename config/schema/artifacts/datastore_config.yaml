@@ -2195,7 +2195,7 @@ scripts:
 
         // No timestamp values matched the params, so return `false`.
         return false;
-  update_index_data_a9f0d473a153877316015fdd07360a84:
+  update_index_data_cb9dbfa4c50ae7a159bfa613875fdc71:
     context: update
     script:
       lang: painless
@@ -2209,10 +2209,10 @@ scripts:
         String buildNestedElementKey(List pathSegments, Map pathIdentifiers) {
           List parts = new ArrayList();
           for (Map segment : pathSegments) {
-            if (segment.containsKey("list")) {
+            if ("list".equals(segment.get("type"))) {
               parts.add(pathIdentifiers[segment.source_field]);
             } else {
-              parts.add(segment.get("object"));
+              parts.add(segment.get("field"));
             }
           }
           return String.join(":", parts);
@@ -2250,14 +2250,13 @@ scripts:
 
           for (int i = 0; i < pathSegments.size(); i++) {
             Map segment = (Map) pathSegments.get(i);
-            boolean isList = segment.containsKey("list");
-            String field = isList ? (String) segment.get("list") : (String) segment.get("object");
+            String field = (String) segment.get("field");
 
             if (!current.containsKey(field)) {
               return null;
             }
 
-            if (isList) {
+            if ("list".equals(segment.get("type"))) {
               current = (Map) findInList((List) current.get(field), (String) segment.get("match_field"), (String) keyParts.get(i));
             } else {
               current = (Map) current.get(field);
