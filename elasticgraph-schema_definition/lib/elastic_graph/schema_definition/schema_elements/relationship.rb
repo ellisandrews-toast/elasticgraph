@@ -53,7 +53,7 @@ module ElasticGraph
         # @private
         attr_accessor :hide_relationship_runtime_metadata
 
-        # @return [ParentRelationshipRef, nil] reference to the parent relationship in a nested sourced_from chain
+        # @return [ParentRef, nil] reference to the parent relationship in a nested sourced_from chain
         # @private
         attr_reader :parent_ref
 
