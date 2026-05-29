@@ -37,7 +37,11 @@ module ElasticGraph
       #     end
       #   end
       class Relationship < DelegateClass(Field)
-        # @dynamic related_type, foreign_key, hide_relationship_runtime_metadata, hide_relationship_runtime_metadata=, parent_relationship_config, indexing_only
+        # @dynamic related_type, foreign_key, hide_relationship_runtime_metadata, hide_relationship_runtime_metadata=, parent_ref, indexing_only
+
+        # References a parent relationship in a nested sourced_from chain.
+        # @private
+        ParentRef = ::Data.define(:type_ref, :relationship_name)
 
         # @return [ObjectType, InterfaceType, UnionType] the type this relationship relates to
         attr_reader :related_type
@@ -49,9 +53,9 @@ module ElasticGraph
         # @private
         attr_accessor :hide_relationship_runtime_metadata
 
-        # @return [Hash, nil] configuration for parent relationship in a nested sourced_from chain
+        # @return [ParentRelationshipRef, nil] reference to the parent relationship in a nested sourced_from chain
         # @private
-        attr_reader :parent_relationship_config
+        attr_reader :parent_ref
 
         # @return [Boolean] true if this relationship is for indexing only (not exposed in GraphQL)
         # @private
@@ -68,7 +72,7 @@ module ElasticGraph
           @indexing_only = indexing_only
           @equivalent_field_paths_by_local_path = {}
           @additional_filter = {}
-          @parent_relationship_config = nil
+          @parent_ref = nil
         end
 
         # Adds additional filter conditions to a relationship beyond the foreign key.
@@ -194,15 +198,15 @@ module ElasticGraph
         #     end
         #   end
         def parent_relationship(parent_type_name, parent_relationship_name)
-          if @parent_relationship_config
+          if @parent_ref
             raise Errors::SchemaError, "`parent_relationship` has been called multiple times on `#{parent_type.name}.#{name}`, " \
               "but each relationship can have only one `parent_relationship`."
           end
 
-          @parent_relationship_config = {
-            parent_type_name: parent_type_name,
-            parent_relationship_name: parent_relationship_name
-          }
+          @parent_ref = ParentRef.new(
+            type_ref: schema_def_state.type_ref(parent_type_name),
+            relationship_name: parent_relationship_name
+          )
         end
 
         # Gets the `routing_value_source` from this relationship for the given `index`, based on the configured

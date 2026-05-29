@@ -267,7 +267,7 @@ module ElasticGraph
       def identify_nested_sourced_update_targets(object_type, extra_update_targets_by_type_name, errors)
         # Find relationships on this type that have parent_relationship configured
         nested_relationships = object_type.relationships_by_name
-          .select { |_, rel| rel.parent_relationship_config }
+          .select { |_, rel| rel.parent_ref }
 
         return if nested_relationships.empty?
 

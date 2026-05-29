@@ -22,7 +22,7 @@ module ElasticGraph
         end
 
         # Resolves the chain starting from `starting_relationship` (which must have a
-        # `parent_relationship_config`) on `starting_type`.
+        # `parent_ref`) on `starting_type`.
         #
         # Returns a tuple of [resolved_chain, errors].
         # If errors is non-empty, resolved_chain will be nil.
@@ -35,9 +35,7 @@ module ElasticGraph
 
           # Walk from leaf to root, building path segments in reverse. Each iteration validates
           # the current relationship's parent_relationship link and advances up one level.
-          while current_rel.parent_relationship_config
-            config = current_rel.parent_relationship_config
-
+          while (ref = current_rel.parent_ref)
             # Validate that parent_relationship is used with indexing_only
             unless current_rel.indexing_only
               errors << "#{rel_description(current_type, current_rel)} uses `parent_relationship` but is not declared with " \
@@ -46,25 +44,26 @@ module ElasticGraph
             end
 
             # Detect circular chains
-            if visited_types.include?(config[:parent_type_name])
+            parent_type_name = ref.type_ref.name
+            if visited_types.include?(parent_type_name)
               errors << "#{rel_description(current_type, current_rel)} creates a circular `parent_relationship` chain " \
-                "— `#{config[:parent_type_name]}` was already visited. The chain must terminate at a root indexed type."
+                "— `#{parent_type_name}` was already visited. The chain must terminate at a root indexed type."
               break
             end
 
             # Find the parent type
-            parent_type = @schema_def_state.object_types_by_name[config[:parent_type_name]]
+            parent_type = ref.type_ref.as_object_type
             unless parent_type
               errors << "#{rel_description(current_type, current_rel)} references parent type " \
-                "`#{config[:parent_type_name]}` via `parent_relationship`, but that type does not exist."
+                "`#{parent_type_name}` via `parent_relationship`, but that type does not exist."
               break
             end
 
             # Find the parent relationship
-            parent_rel = parent_type.relationships_by_name[config[:parent_relationship_name]]
+            parent_rel = parent_type.relationships_by_name[ref.relationship_name]
             unless parent_rel
               errors << "#{rel_description(current_type, current_rel)} references parent relationship " \
-                "`#{parent_type.name}.#{config[:parent_relationship_name]}` via `parent_relationship`, " \
+                "`#{parent_type.name}.#{ref.relationship_name}` via `parent_relationship`, " \
                 "but that relationship does not exist. Is it misspelled?"
               break
             end
@@ -74,7 +73,7 @@ module ElasticGraph
             parent_source_type_name = parent_rel.related_type.unwrap_non_null.name
             unless current_source_type_name == parent_source_type_name
               errors << "#{rel_description(current_type, current_rel)} relates to `#{current_source_type_name}`, " \
-                "but its parent relationship `#{parent_type.name}.#{config[:parent_relationship_name]}` relates to " \
+                "but its parent relationship `#{parent_type.name}.#{ref.relationship_name}` relates to " \
                 "`#{parent_source_type_name}`. All relationships in a `parent_relationship` chain must relate to the same source type."
               break
             end
@@ -118,7 +117,7 @@ module ElasticGraph
 
           return [nil, errors] if errors.any?
 
-          # The loop terminated because current_rel has no parent_relationship_config —
+          # The loop terminated because current_rel has no parent_ref —
           # this is the root relationship. Validate that current_type is indexed.
           unless current_type.root_document_type?
             errors << "The `parent_relationship` chain from #{rel_description(starting_type, starting_relationship)} " \
