@@ -45,10 +45,10 @@ module ElasticGraph
             return [nil, errors]
           end
 
-          nested_sourced_fields_params = resolve_nested_sourced_fields_params(errors)
-          return [nil, errors] if nested_sourced_fields_params.empty? && errors.any?
+          field_params = resolve_nested_sourced_data_params(errors)
+          return [nil, errors] if field_params.empty? && errors.any?
 
-          nested_sourced_path_identifiers_params = build_path_identifier_params
+          path_identifier_params = build_path_identifier_params
           nested_sourced_paths = build_nested_sourced_paths
           routing_value_source = resolve_routing(errors)
           rollover_timestamp_value_source = resolve_rollover(errors)
@@ -60,13 +60,17 @@ module ElasticGraph
             # Register the path config on the destination index so it's available at runtime.
             resolved_chain.root_indexed_type.index_def.register_nested_sourced_paths(relationship.name, nested_sourced_paths)
 
+            nested_sourced_data_params = SchemaArtifacts::RuntimeMetadata::NestedSourcedDataParams.new(
+              field_params: field_params,
+              path_identifier_params: path_identifier_params
+            )
+
             update_target = UpdateTargetFactory.new_normal_indexing_update_target(
               type: resolved_chain.root_indexed_type.name,
               relationship: relationship.name,
               id_source: resolved_chain.root_relationship.foreign_key,
               top_level_fields_params: {},
-              nested_sourced_fields_params: nested_sourced_fields_params,
-              nested_sourced_path_identifiers_params: nested_sourced_path_identifiers_params,
+              nested_sourced_data_params: nested_sourced_data_params,
               routing_value_source: routing_value_source,
               rollover_timestamp_value_source: rollover_timestamp_value_source
             )
@@ -84,7 +88,7 @@ module ElasticGraph
           @related_type ||= schema_def_state.object_types_by_name[relationship.related_type.unwrap_non_null.name]
         end
 
-        def resolve_nested_sourced_fields_params(errors)
+        def resolve_nested_sourced_data_params(errors)
           sourced_fields.filter_map do |field|
             field_source = field.source # : SchemaElements::FieldSource
             referenced_field_path = field_path_resolver.resolve_public_path(related_type, field_source.field_path) do |parent_field|

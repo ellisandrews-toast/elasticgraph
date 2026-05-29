@@ -26,8 +26,7 @@ module ElasticGraph
             routing_value_source: nil,
             rollover_timestamp_value_source: nil,
             top_level_fields_params: {},
-            nested_sourced_fields_params: {},
-            nested_sourced_path_identifiers_params: {},
+            nested_sourced_data_params: NestedSourcedDataParams::EMPTY,
             metadata_params: {}
           )
         end
