@@ -139,9 +139,7 @@ module ElasticGraph
           end
 
           # We use "id" as the match field, consistent with how ElasticGraph relationships always join on `id`
-          # via foreign keys. In the future, it would be nice if this field name were configurable. Additionally, the
-          # composite key separator ":" in the Painless script assumes id values do not contain that character.
-          # It would be nice to explicitly guard against that somehow.
+          # via foreign keys. In the future, it would be nice if this field name were configurable.
           chain << PathSegment.new(
             parent_type: parent_type,
             embedding_field: embedding_field,

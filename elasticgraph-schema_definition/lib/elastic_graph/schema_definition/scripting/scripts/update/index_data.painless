@@ -2,9 +2,41 @@
 // Helper Functions
 // ============================================================
 
-// Builds a composite nested element key from path segments.
+// Encodes a list of strings into a length-prefixed string.
+// Each part is encoded as "length:value" and parts are concatenated directly.
+// This encoding is unambiguous regardless of what characters the values contain.
+String encodeKey(List parts) {
+  StringBuilder sb = new StringBuilder();
+  for (String part : parts) {
+    sb.append(part.length());
+    sb.append(':');
+    sb.append(part);
+  }
+  return sb.toString();
+}
+
+// Decodes a length-prefixed string back into a list of strings.
+List decodeKey(String key) {
+  List parts = new ArrayList();
+  int i = 0;
+  while (i < key.length()) {
+    int colonPos = key.indexOf(":", i);
+    int length = Integer.parseInt(key.substring(i, colonPos));
+    int valueStart = colonPos + 1;
+    parts.add(key.substring(valueStart, valueStart + length));
+    i = valueStart + length;
+  }
+  return parts;
+}
+
+// Builds a nested element key (as an encoded string) from path segments.
 // List segments contribute their matched identifier value; object segments contribute their field name.
-String buildNestedElementKey(List pathSegments, Map pathIdentifiers) {
+// Returns "" if no path segments are configured (i.e., this is not a nested sourced event).
+String buildNestedElementKey(String relationship, Map nestedSourcedPaths, Map pathIdentifiers) {
+  List pathSegments = (List) nestedSourcedPaths.get(relationship);
+  if (pathSegments == null) {
+    return "";
+  }
   List parts = new ArrayList();
   for (Map segment : pathSegments) {
     if ("list".equals(segment.get("type"))) {
@@ -13,22 +45,18 @@ String buildNestedElementKey(List pathSegments, Map pathIdentifiers) {
       parts.add(segment.get("field"));
     }
   }
-  return String.join(":", parts);
+  return encodeKey(parts);
 }
 
-// Looks up path segments for the given relationship and builds the nested element key.
-// Returns "" if no path segments are configured (i.e., this is not a nested sourced event).
-String buildNestedElementKeyForRelationship(String relationship, Map nestedSourcedPaths, Map pathIdentifiers) {
-  List pathSegments = (List) nestedSourcedPaths.get(relationship);
-  if (pathSegments == null) {
-    return "";
+// Builds the versions key by combining the relationship name with the element key parts.
+// For top-level events (empty element key), returns just the relationship name.
+String buildVersionsKey(String relationship, String nestedElementKey) {
+  if (nestedElementKey.isEmpty()) {
+    return relationship;
   }
-  return buildNestedElementKey(pathSegments, pathIdentifiers);
-}
-
-// Splits a composite nested element key into a list of parts.
-List splitNestedElementKey(String nestedElementKey) {
-  return Arrays.asList(nestedElementKey.splitOnToken(":"));
+  List parts = decodeKey(nestedElementKey);
+  parts.add(0, relationship);
+  return encodeKey(parts);
 }
 
 // Finds an element in a list where element[matchField] equals matchValue. Returns null if not found.
@@ -167,7 +195,7 @@ void applyNestedSourcedData(Map source, Map nestedSourcedPaths) {
     }
 
     for (elementEntry in dataByKey.entrySet()) {
-      List keyParts = splitNestedElementKey((String) elementEntry.getKey());
+      List keyParts = decodeKey((String) elementEntry.getKey());
       if (keyParts.size() != pathSegments.size()) {
         continue;
       }
@@ -213,8 +241,8 @@ Map nestedSourcedFields = params.nestedSourcedFields;
 Map nestedSourcedPathIdentifiers = params.nestedSourcedPathIdentifiers;
 Map nestedSourcedPaths = params.nestedSourcedPaths;
 
-String nestedElementKey = buildNestedElementKeyForRelationship(relationship, nestedSourcedPaths, nestedSourcedPathIdentifiers);
-String versionsKey = nestedElementKey.isEmpty() ? relationship : relationship + ":" + nestedElementKey;
+String nestedElementKey = buildNestedElementKey(relationship, nestedSourcedPaths, nestedSourcedPathIdentifiers);
+String versionsKey = buildVersionsKey(relationship, nestedElementKey);
 
 setup(source, versionsKey, relationship, nestedElementKey, counts);
 validateSource(source, id, relationship, sourceId, eventVersion, versionsKey);
