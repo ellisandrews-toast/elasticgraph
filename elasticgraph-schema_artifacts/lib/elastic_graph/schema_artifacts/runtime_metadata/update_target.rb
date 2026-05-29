@@ -25,7 +25,6 @@ module ElasticGraph
         :top_level_fields_params,
         :nested_sourced_fields_params,
         :nested_sourced_path_identifiers_params,
-        :nested_sourced_paths,
         :metadata_params
       )
         TYPE = "type"
@@ -37,7 +36,6 @@ module ElasticGraph
         TOP_LEVEL_FIELDS_PARAMS = "top_level_fields_params"
         NESTED_SOURCED_FIELDS_PARAMS = "nested_sourced_fields_params"
         NESTED_SOURCED_PATH_IDENTIFIERS_PARAMS = "nested_sourced_path_identifiers_params"
-        NESTED_SOURCED_PATHS = "nested_sourced_paths"
         METADATA_PARAMS = "metadata_params"
 
         def self.from_hash(hash)
@@ -51,7 +49,6 @@ module ElasticGraph
             top_level_fields_params: Param.load_params_hash(hash[TOP_LEVEL_FIELDS_PARAMS] || {}),
             nested_sourced_fields_params: Param.load_params_hash(hash[NESTED_SOURCED_FIELDS_PARAMS] || {}),
             nested_sourced_path_identifiers_params: Param.load_params_hash(hash[NESTED_SOURCED_PATH_IDENTIFIERS_PARAMS] || {}),
-            nested_sourced_paths: hash[NESTED_SOURCED_PATHS] || {},
             metadata_params: Param.load_params_hash(hash[METADATA_PARAMS] || {})
           )
         end
@@ -63,7 +60,6 @@ module ElasticGraph
             METADATA_PARAMS => Param.dump_params_hash(metadata_params),
             NESTED_SOURCED_FIELDS_PARAMS => Param.dump_params_hash(nested_sourced_fields_params),
             NESTED_SOURCED_PATH_IDENTIFIERS_PARAMS => Param.dump_params_hash(nested_sourced_path_identifiers_params),
-            NESTED_SOURCED_PATHS => nested_sourced_paths,
             RELATIONSHIP => relationship,
             ROLLOVER_TIMESTAMP_VALUE_SOURCE => rollover_timestamp_value_source,
             ROUTING_VALUE_SOURCE => routing_value_source,
@@ -98,8 +94,7 @@ module ElasticGraph
             "id" => doc_id,
             "topLevelFields" => top_level_fields,
             "nestedSourcedFields" => nested_sourced_fields,
-            "nestedSourcedPathIdentifiers" => nested_sourced_path_identifiers,
-            "nestedSourcedPaths" => nested_sourced_paths
+            "nestedSourcedPathIdentifiers" => nested_sourced_path_identifiers
           })
         end
       end

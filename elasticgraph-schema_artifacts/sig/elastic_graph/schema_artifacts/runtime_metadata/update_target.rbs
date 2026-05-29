@@ -11,7 +11,6 @@ module ElasticGraph
         attr_reader top_level_fields_params: paramsHash
         attr_reader nested_sourced_fields_params: paramsHash
         attr_reader nested_sourced_path_identifiers_params: paramsHash
-        attr_reader nested_sourced_paths: ::Hash[::String, ::Array[::Hash[::String, untyped]]]
         attr_reader metadata_params: paramsHash
 
         def initialize: (
@@ -24,7 +23,6 @@ module ElasticGraph
           top_level_fields_params: paramsHash,
           nested_sourced_fields_params: paramsHash,
           nested_sourced_path_identifiers_params: paramsHash,
-          nested_sourced_paths: ::Hash[::String, ::Array[::Hash[::String, untyped]]],
           metadata_params: paramsHash
         ) -> void
 
@@ -38,7 +36,6 @@ module ElasticGraph
           ?top_level_fields_params: paramsHash,
           ?nested_sourced_fields_params: paramsHash,
           ?nested_sourced_path_identifiers_params: paramsHash,
-          ?nested_sourced_paths: ::Hash[::String, ::Array[::Hash[::String, untyped]]],
           ?metadata_params: paramsHash
         ) -> UpdateTarget
 
@@ -57,7 +54,6 @@ module ElasticGraph
         TOP_LEVEL_FIELDS_PARAMS: "top_level_fields_params"
         NESTED_SOURCED_FIELDS_PARAMS: "nested_sourced_fields_params"
         NESTED_SOURCED_PATH_IDENTIFIERS_PARAMS: "nested_sourced_path_identifiers_params"
-        NESTED_SOURCED_PATHS: "nested_sourced_paths"
         METADATA_PARAMS: "metadata_params"
 
         def self.from_hash: (::Hash[::String, untyped]) -> UpdateTarget

@@ -56,9 +56,8 @@ module ElasticGraph
           if errors.any?
             [nil, errors]
           else
-            # Wrap in map keyed by relationship name — the script uses this to look up
-            # the path config for the specific relationship being processed.
-            nested_sourced_paths_map = {relationship.name => nested_sourced_paths}
+            # Register the path config on the destination index so it's available at runtime.
+            resolved_chain.root_indexed_type.index_def.register_nested_sourced_paths(relationship.name, nested_sourced_paths)
 
             update_target = UpdateTargetFactory.new_normal_indexing_update_target(
               type: resolved_chain.root_indexed_type.name,
@@ -68,8 +67,7 @@ module ElasticGraph
               nested_sourced_fields_params: nested_sourced_fields_params,
               nested_sourced_path_identifiers_params: nested_sourced_path_identifiers_params,
               routing_value_source: routing_value_source,
-              rollover_timestamp_value_source: rollover_timestamp_value_source,
-              nested_sourced_paths: nested_sourced_paths_map
+              rollover_timestamp_value_source: rollover_timestamp_value_source
             )
 
             [update_target, errors]

@@ -56,6 +56,7 @@ module ElasticGraph
           settings = DEFAULT_SETTINGS.merge(Support::HashUtil.flatten_and_stringify_keys(settings, prefix: "index"))
 
           super(name, [], settings, schema_def_state, indexed_type, nil, nil, false)
+          @nested_sourced_paths = {} # : ::Hash[::String, ::Array[::Hash[::String, untyped]]]
 
           schema_def_state.after_user_definition_complete do
             # `id` is the field Elasticsearch/OpenSearch use for routing by default:
@@ -251,6 +252,13 @@ module ElasticGraph
           }
         end
 
+        # Registers the nested sourced path segments for a relationship on this index.
+        # Called by `NestedUpdateTargetResolver` during schema resolution.
+        # @api private
+        def register_nested_sourced_paths(relationship_name, path_segments)
+          @nested_sourced_paths[relationship_name] = path_segments
+        end
+
         # @return [SchemaArtifacts::RuntimeMetadata::IndexDefinition] runtime metadata for this index
         def runtime_metadata
           SchemaArtifacts::RuntimeMetadata::IndexDefinition.new(
@@ -264,7 +272,8 @@ module ElasticGraph
                 direction: direction
               )
             end,
-            has_had_multiple_sources: has_had_multiple_sources_flag
+            has_had_multiple_sources: has_had_multiple_sources_flag,
+            nested_sourced_paths: @nested_sourced_paths
           )
         end
 

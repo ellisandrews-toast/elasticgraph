@@ -274,8 +274,7 @@ module ElasticGraph
               [f, SchemaArtifacts::RuntimeMetadata::DynamicParam.new(source_path: f, cardinality: :many)]
             end,
             nested_sourced_fields_params: {},
-            nested_sourced_path_identifiers_params: {},
-            nested_sourced_paths: {}
+            nested_sourced_path_identifiers_params: {}
           )
         end
 

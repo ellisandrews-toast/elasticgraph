@@ -28,7 +28,6 @@ module ElasticGraph
             top_level_fields_params: {},
             nested_sourced_fields_params: {},
             nested_sourced_path_identifiers_params: {},
-            nested_sourced_paths: {},
             metadata_params: {}
           )
         end
@@ -87,7 +86,7 @@ module ElasticGraph
               }
             )
 
-            without_omitted_fields = params.except("id", "topLevelFields", "nestedSourcedFields", "nestedSourcedPathIdentifiers", "nestedSourcedPaths")
+            without_omitted_fields = params.except("id", "topLevelFields", "nestedSourcedFields", "nestedSourcedPathIdentifiers")
 
             expect(without_omitted_fields).to eq(
               "foo" => 43,
