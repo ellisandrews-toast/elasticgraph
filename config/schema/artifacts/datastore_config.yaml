@@ -2195,7 +2195,7 @@ scripts:
 
         // No timestamp values matched the params, so return `false`.
         return false;
-  update_index_data_59be3b4ab537ea412a3ead0408fb4137:
+  update_index_data_738f9cf17e64ab0e8d8747d8854dec23:
     context: update
     script:
       lang: painless
@@ -2221,11 +2221,11 @@ scripts:
         // Looks up path segments for the given relationship and builds the nested element key.
         // Returns "" if no path segments are configured (i.e., this is not a nested sourced event).
         String buildNestedElementKeyForRelationship(String relationship, Map nestedSourcedPaths, Map pathIdentifiers) {
-            List pathSegments = (List) nestedSourcedPaths.get(relationship);
-            if (pathSegments == null) {
-              return "";
-            }
-            return buildNestedElementKey(pathSegments, pathIdentifiers);
+          List pathSegments = (List) nestedSourcedPaths.get(relationship);
+          if (pathSegments == null) {
+            return "";
+          }
+          return buildNestedElementKey(pathSegments, pathIdentifiers);
         }
 
         // Splits a composite nested element key into a list of parts.
