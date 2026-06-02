@@ -33,6 +33,7 @@ module ElasticGraph
         SOURCE_FIELD = "source_field"
 
         def to_dumpable_hash
+          # Keys here are ordered alphabetically; please keep them that way
           {FIELD => field, MATCH_FIELD => match_field, SOURCE_FIELD => source_field}
         end
 
@@ -49,6 +50,7 @@ module ElasticGraph
         FIELD = "field"
 
         def to_dumpable_hash
+          # Keys here are ordered alphabetically; please keep them that way
           {FIELD => field}
         end
 
