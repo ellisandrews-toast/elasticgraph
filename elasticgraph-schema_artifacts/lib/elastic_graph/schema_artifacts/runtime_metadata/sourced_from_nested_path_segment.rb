@@ -23,9 +23,11 @@ module ElasticGraph
       # Represents a segment in a nested sourced path that navigates into a list field,
       # matching an element by a key field.
       #
+      # A future PR will add `to_painless_param` to convert these segments into the
+      # camelCase hash format expected by the painless script (with a "type" discriminator).
+      #
       # @private
       class ListPathSegment < ::Data.define(:field, :match_field, :source_field)
-        # @dynamic to_painless_param
         FIELD = "field"
         MATCH_FIELD = "match_field"
         SOURCE_FIELD = "source_field"
@@ -34,28 +36,20 @@ module ElasticGraph
           {FIELD => field, MATCH_FIELD => match_field, SOURCE_FIELD => source_field}
         end
 
-        def to_painless_param
-          {"type" => "list", "field" => field, "matchField" => match_field, "sourceField" => source_field}
-        end
-
         def self.from_hash(hash)
           new(field: hash[FIELD], match_field: hash[MATCH_FIELD], source_field: hash[SOURCE_FIELD])
         end
       end
 
       # Represents a segment in a nested sourced path that navigates into an object field.
+      # See `ListPathSegment` for notes on `to_painless_param`.
       #
       # @private
       class ObjectPathSegment < ::Data.define(:field)
-        # @dynamic to_painless_param
         FIELD = "field"
 
         def to_dumpable_hash
           {FIELD => field}
-        end
-
-        def to_painless_param
-          {"type" => "object", "field" => field}
         end
 
         def self.from_hash(hash)
