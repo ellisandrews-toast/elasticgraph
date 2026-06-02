@@ -9,22 +9,34 @@
 module ElasticGraph
   module SchemaArtifacts
     module RuntimeMetadata
+      # @private
+      module SourcedFromNestedPathSegment
+        def self.from_hash(hash)
+          if hash.key?("match_field")
+            ListPathSegment.from_hash(hash)
+          else
+            ObjectPathSegment.from_hash(hash)
+          end
+        end
+      end
+
       # Represents a segment in a nested sourced path that navigates into a list field,
       # matching an element by a key field.
       #
       # @private
       class ListPathSegment < ::Data.define(:field, :match_field, :source_field)
         # @dynamic to_painless_param
-        TYPE = "list"
         FIELD = "field"
-        MATCH_FIELD = "matchField"
-        SOURCE_FIELD = "sourceField"
+        MATCH_FIELD = "match_field"
+        SOURCE_FIELD = "source_field"
 
         def to_dumpable_hash
-          {"type" => TYPE, FIELD => field, MATCH_FIELD => match_field, SOURCE_FIELD => source_field}
+          {FIELD => field, MATCH_FIELD => match_field, SOURCE_FIELD => source_field}
         end
 
-        alias_method :to_painless_param, :to_dumpable_hash
+        def to_painless_param
+          {"type" => "list", "field" => field, "matchField" => match_field, "sourceField" => source_field}
+        end
 
         def self.from_hash(hash)
           new(field: hash[FIELD], match_field: hash[MATCH_FIELD], source_field: hash[SOURCE_FIELD])
@@ -36,33 +48,18 @@ module ElasticGraph
       # @private
       class ObjectPathSegment < ::Data.define(:field)
         # @dynamic to_painless_param
-        TYPE = "object"
         FIELD = "field"
 
         def to_dumpable_hash
-          {"type" => TYPE, FIELD => field}
+          {FIELD => field}
         end
 
-        alias_method :to_painless_param, :to_dumpable_hash
+        def to_painless_param
+          {"type" => "object", "field" => field}
+        end
 
         def self.from_hash(hash)
           new(field: hash[FIELD])
-        end
-      end
-
-      # @private
-      module NestedSourcedPathSegment
-        def self.from_hash(hash)
-          case hash["type"]
-          when ListPathSegment::TYPE
-            ListPathSegment.from_hash(hash)
-          when ObjectPathSegment::TYPE
-            ObjectPathSegment.from_hash(hash)
-          # :nocov: -- defensive error for corrupted YAML; not worth a dedicated test.
-          else
-            raise "Unknown nested sourced path segment type: #{hash["type"].inspect}"
-            # :nocov:
-          end
         end
       end
     end
