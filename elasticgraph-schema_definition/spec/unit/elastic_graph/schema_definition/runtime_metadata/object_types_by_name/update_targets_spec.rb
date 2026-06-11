@@ -1657,6 +1657,27 @@ module ElasticGraph
             )
           end
 
+          it "raises an error when a relationship in the chain uses an outbound foreign key" do
+            expect {
+              nested_sourced_from_schema(player_statline_dir: :out, player_statline_via: "statLineId")
+            }.to raise_error Errors::SchemaError, a_string_including(
+              "`Player.statLine` has an outbound foreign key (`dir: :out`), but nested `sourced_from` is only supported via inbound foreign key (`dir: :in`) relationships."
+            )
+          end
+
+          it "raises an error when a relationship in the chain uses an `additional_filter`" do
+            expect {
+              nested_sourced_from_schema(
+                on_player_relationship: ->(r) {
+                  r.parent_relationship "Team", "statLines"
+                  r.additional_filter status: "active"
+                }
+              )
+            }.to raise_error Errors::SchemaError, a_string_including(
+              "`Player.statLine` uses an `additional_filter`, but nested `sourced_from` is not supported on relationships with `additional_filter`."
+            )
+          end
+
           it "raises an error when the chain terminates at a non-indexed type" do
             expect {
               nested_sourced_from_schema(index_teams: false)
@@ -1738,7 +1759,9 @@ module ElasticGraph
           on_teams_index: nil,
           on_statline: nil,
           player_goals_type: "Int",
-          player_goals_source: "goals"
+          player_goals_source: "goals",
+          player_statline_dir: :in,
+          player_statline_via: "playerId"
         )
           object_type_metadata_for fetch do |s|
             s.object_type "Team" do |t|
@@ -1770,7 +1793,7 @@ module ElasticGraph
                 f.sourced_from "statLine", player_goals_source
               end
 
-              t.relates_to_one "statLine", "StatLine", via: "playerId", dir: :in, indexing_only: player_indexing_only do |r|
+              t.relates_to_one "statLine", "StatLine", via: player_statline_via, dir: player_statline_dir, indexing_only: player_indexing_only do |r|
                 on_player_relationship.call(r)
               end
 

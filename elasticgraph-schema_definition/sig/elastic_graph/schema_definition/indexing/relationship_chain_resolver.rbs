@@ -62,6 +62,7 @@ module ElasticGraph
           ::Array[::String]
         ) -> void
 
+        def validate_chain_relationship: (SchemaElements::Relationship, ::Array[::String]) -> void
         def resolve_field: (SchemaElements::Relationship::ParentRef, indexableType, SchemaElements::Relationship, ::Array[::String]) -> SchemaElements::Field?
         def find_field_by_type: (indexableType, SchemaElements::Relationship, ::Array[::String]) -> SchemaElements::Field?
         def rel_description: (SchemaElements::Relationship) -> ::String

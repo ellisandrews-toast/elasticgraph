@@ -127,6 +127,11 @@ module ElasticGraph
         # Recursively walks from leaf to root, building path segments in reverse. Returns the root
         # relationship (the one with no parent_ref) on success, or nil if an error was encountered.
         def resolve_chain(current_rel, path_segments, errors, visited_relationships)
+          # Every relationship in the chain joins on a foreign key that routes the source event down to the
+          # nested element, so each must use an inbound foreign key and no `additional_filter`.
+          validate_chain_relationship(current_rel, errors)
+          return nil if errors.any?
+
           parent_ref = current_rel.parent_ref
           return current_rel unless parent_ref
 
@@ -138,6 +143,23 @@ module ElasticGraph
 
           visited_relationships.add(parent_rel)
           resolve_chain(parent_rel, path_segments, errors, visited_relationships)
+        end
+
+        # Validates that a single relationship in the chain can route source events: it must use an inbound
+        # foreign key (so the event carries the key) and no `additional_filter` (which the `sourced_from` update
+        # path ignores, so a filtered relationship would silently mismatch).
+        def validate_chain_relationship(relationship, errors)
+          relation_metadata = relationship.runtime_metadata # : SchemaArtifacts::RuntimeMetadata::Relation
+
+          if relation_metadata.direction == :out
+            errors << "#{rel_description(relationship)} has an outbound foreign key (`dir: :out`), but nested " \
+              "`sourced_from` is only supported via inbound foreign key (`dir: :in`) relationships."
+          end
+
+          unless relation_metadata.additional_filter.empty?
+            errors << "#{rel_description(relationship)} uses an `additional_filter`, but nested `sourced_from` is " \
+              "not supported on relationships with `additional_filter`."
+          end
         end
 
         # Resolves a parent_ref into the concrete parent relationship.
