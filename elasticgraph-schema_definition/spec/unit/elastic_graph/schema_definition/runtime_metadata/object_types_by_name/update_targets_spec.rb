@@ -1302,7 +1302,7 @@ module ElasticGraph
 
         describe "nested `sourced_from` update targets" do
           it "dumps a nested update target on the source type, keyed by the qualified relationship" do
-            targets = nested_update_targets_by_relationship(nested_sourced_from_schema(fetch: "StatLine"))
+            targets = nested_update_targets_by_relationship(nested_sourced_from_schema)
 
             expect(targets.keys).to contain_exactly("players.statLine")
             target = targets.fetch("players.statLine")
@@ -1322,7 +1322,7 @@ module ElasticGraph
           end
 
           it "omits `path_identifier_params` for a non-list (object) embedding field, since there is no element to match" do
-            metadata = nested_sourced_from_schema(fetch: "StatLine", players_field: "Player!")
+            metadata = nested_sourced_from_schema(players_field: "Player!")
             target = nested_update_targets_by_relationship(metadata).fetch("players.statLine")
 
             expect(target.sourced_from_nested_params.path_identifier_params).to eq({})
@@ -1331,7 +1331,6 @@ module ElasticGraph
           context "on a root type that uses custom routing" do
             it "determines the `routing_value_source` from an `equivalent_field` configured on the root relationship" do
               metadata = nested_sourced_from_schema(
-                fetch: "StatLine",
                 on_team: ->(t) { t.field "team_owner_id", "ID!" },
                 on_teams_index: ->(i) { i.route_with "team_owner_id" },
                 on_statlines_relationship: ->(r) {
@@ -1380,7 +1379,6 @@ module ElasticGraph
           context "on a root type that uses a rollover index" do
             it "determines the `rollover_timestamp_value_source` from an `equivalent_field` configured on the root relationship" do
               metadata = nested_sourced_from_schema(
-                fetch: "StatLine",
                 on_team: ->(t) { t.field "team_created_at", "DateTime" },
                 on_teams_index: ->(i) { i.rollover :yearly, "team_created_at" },
                 on_statlines_relationship: ->(r) { r.equivalent_field "created_at", locally_named: "team_created_at" },
@@ -1431,7 +1429,7 @@ module ElasticGraph
               )
             end
 
-            it "raises an error when the leaf relationship is `relates_to_many`", :dont_validate_graphql_schema do
+            it "raises an error when the leaf relationship is `relates_to_many`" do
               expect {
                 object_type_metadata_for "Team" do |s|
                   s.object_type "Team" do |t|
@@ -1471,7 +1469,6 @@ module ElasticGraph
         describe "`parent_relationship` validations" do
           it "accepts an explicit `parent_field_name:` to identify the embedding field" do
             metadata = nested_sourced_from_schema(
-              fetch: "StatLine",
               on_player_relationship: ->(r) { r.parent_relationship "Team", "statLines", parent_field_name: "players" }
             )
 
@@ -1481,7 +1478,7 @@ module ElasticGraph
           it "discovers an embedding field declared with `indexing_only: true`" do
             # An `indexing_only: true` field is absent from `graphql_fields_by_name` but present in
             # `indexing_fields_by_name_in_index`, so this only resolves when the latter is used.
-            metadata = nested_sourced_from_schema(fetch: "StatLine", players_field: nil, on_team: ->(t) {
+            metadata = nested_sourced_from_schema(players_field: nil, on_team: ->(t) {
               t.field "players", "[Player!]!", indexing_only: true do |f|
                 f.mapping type: "object"
               end
@@ -1712,7 +1709,6 @@ module ElasticGraph
 
           it "uses `parent_field_name:` to disambiguate when multiple embedding fields exist" do
             metadata = nested_sourced_from_schema(
-              fetch: "StatLine",
               on_team: ->(t) {
                 t.field "bench_players", "[Player!]!" do |f|
                   f.mapping type: "object"
@@ -1742,12 +1738,11 @@ module ElasticGraph
         def nested_update_targets_by_relationship(metadata)
           metadata
             .update_targets
-            .reject { |t| t.relationship == SELF_RELATIONSHIP_NAME }
             .to_h { |t| [t.relationship, t] }
+            .except(SELF_RELATIONSHIP_NAME)
         end
 
         def nested_sourced_from_schema(
-          fetch: "Team",
           on_team: nil,
           on_statlines_relationship: nil,
           on_player_relationship: ->(r) { r.parent_relationship "Team", "statLines" },
@@ -1763,7 +1758,8 @@ module ElasticGraph
           player_statline_dir: :in,
           player_statline_via: "playerId"
         )
-          object_type_metadata_for fetch do |s|
+          # `StatLine` is the source type, so its metadata carries the nested update targets we assert on.
+          object_type_metadata_for "StatLine" do |s|
             s.object_type "Team" do |t|
               t.field "id", "ID!"
 
@@ -1773,9 +1769,7 @@ module ElasticGraph
                 end
               end
 
-              t.relates_to_many "statLines", "StatLine", via: "teamId", dir: :in, indexing_only: true do |r|
-                on_statlines_relationship&.call(r)
-              end
+              t.relates_to_many "statLines", "StatLine", via: "teamId", dir: :in, indexing_only: true, &on_statlines_relationship
               on_team&.call(t)
 
               if index_teams
