@@ -48,8 +48,13 @@ module ElasticGraph
           routing_value_source, routing_error = resolve_field_source(UpdateTargetResolverSupport::RoutingSourceAdapter)
           rollover_timestamp_value_source, rollover_timestamp_error = resolve_field_source(UpdateTargetResolverSupport::RolloverTimestampSourceAdapter)
           equivalent_field_errors = resolved_relationship.relationship.validate_equivalent_fields(field_path_resolver)
+          index_def = object_type.own_index_def # : Index
+          has_had_multiple_sources_errors = UpdateTargetResolverSupport.validate_has_had_multiple_sources(
+            index_def, object_type, resolved_relationship.relationship
+          )
 
-          all_errors = relationship_errors + top_level_fields_params_errors + equivalent_field_errors + [routing_error, rollover_timestamp_error].compact
+          all_errors = relationship_errors + top_level_fields_params_errors + equivalent_field_errors +
+            has_had_multiple_sources_errors + [routing_error, rollover_timestamp_error].compact
 
           if all_errors.empty?
             update_target = UpdateTargetFactory.new_normal_indexing_update_target(

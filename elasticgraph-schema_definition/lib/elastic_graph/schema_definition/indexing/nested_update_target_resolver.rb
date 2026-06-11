@@ -54,7 +54,7 @@ module ElasticGraph
           # Routing/rollover values resolve from `equivalent_field`s on the root relationship, so they are
           # validated there (matching how `TopLevelUpdateTargetResolver` validates its own relationship).
           equivalent_field_errors = root_relationship.validate_equivalent_fields(field_path_resolver)
-          has_had_multiple_sources_errors = validate_has_had_multiple_sources
+          has_had_multiple_sources_errors = UpdateTargetResolverSupport.validate_has_had_multiple_sources(root_index, root_type, relationship)
 
           all_errors = relationship_errors + field_params_errors + equivalent_field_errors + has_had_multiple_sources_errors +
             [routing_error, rollover_timestamp_error].compact
@@ -144,19 +144,6 @@ module ElasticGraph
             field_path_resolver: field_path_resolver,
             updated_type: root_type
           )
-        end
-
-        # Validates that `has_had_multiple_sources!` has been configured on the root index, since nested
-        # `sourced_from` makes the root index multi-sourced.
-        def validate_has_had_multiple_sources
-          return [] if root_index.has_had_multiple_sources_flag
-
-          ["Type `#{root_type.name}` has nested `sourced_from` fields (via `#{object_type.name}.#{relationship.name}`) but " \
-            "its index `#{root_index.name}` has not been configured with `has_had_multiple_sources!`. To resolve this, add " \
-            "`i.has_had_multiple_sources!` within the `t.index \"#{root_index.name}\"` block. This flag is required because " \
-            "indices with multiple sources can contain incomplete documents, and ElasticGraph needs to know this to apply " \
-            "proper filtering. Once set, this flag should remain even if you later remove all `sourced_from` fields, as the " \
-            "index may still contain historical incomplete documents."]
         end
       end
     end

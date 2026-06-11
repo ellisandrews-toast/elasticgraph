@@ -493,7 +493,7 @@ module ElasticGraph
                   end
                 end
               }.to raise_error Errors::SchemaError, a_string_including(
-                "Type `Widget` uses `sourced_from` fields but its index `widgets` has not been configured with `has_had_multiple_sources!`",
+                "Type `Widget` has `sourced_from` fields (via `Widget.workspace`) but its index `widgets` has not been configured with `has_had_multiple_sources!`",
                 "To resolve this, add `i.has_had_multiple_sources!` within the `t.index \"widgets\"` block",
                 "This flag is required because indices with multiple sources can contain incomplete documents",
                 "Once set, this flag should remain even if you later remove all `sourced_from` fields"
@@ -1427,7 +1427,7 @@ module ElasticGraph
               expect {
                 nested_sourced_from_schema(multiple_sources: false)
               }.to raise_error Errors::SchemaError, a_string_including(
-                "Type `Team` has nested `sourced_from` fields (via `Player.statLine`) but its index `teams` has not been configured with `has_had_multiple_sources!`"
+                "Type `Team` has `sourced_from` fields (via `Player.statLine`) but its index `teams` has not been configured with `has_had_multiple_sources!`"
               )
             end
 

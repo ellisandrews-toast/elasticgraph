@@ -129,6 +129,22 @@ module ElasticGraph
           "`#{relationship.parent_type.name}.#{relationship.name}` (referenced from `sourced_from` on field(s): #{fields_description})"
         end
 
+        # Validates that `index` (which `type` writes to, sourcing data via `relationship`) has been configured
+        # with `has_had_multiple_sources!`. `sourced_from` makes an index multi-sourced, and ElasticGraph needs
+        # that flag to filter incomplete documents correctly.
+        #
+        # Returns a list of any errors found.
+        def self.validate_has_had_multiple_sources(index, type, relationship)
+          return [] if index.has_had_multiple_sources_flag
+
+          ["Type `#{type.name}` has `sourced_from` fields (via `#{relationship.parent_type.name}.#{relationship.name}`) but " \
+            "its index `#{index.name}` has not been configured with `has_had_multiple_sources!`. To resolve this, add " \
+            "`i.has_had_multiple_sources!` within the `t.index \"#{index.name}\"` block. This flag is required because " \
+            "indices with multiple sources can contain incomplete documents, and ElasticGraph needs to know this to apply " \
+            "proper filtering. Once set, this flag should remain even if you later remove all `sourced_from` fields, as the " \
+            "index may still contain historical incomplete documents."]
+        end
+
         # Adapter for the `routing_value_source` case for use by `resolve_field_source`.
         #
         # @private

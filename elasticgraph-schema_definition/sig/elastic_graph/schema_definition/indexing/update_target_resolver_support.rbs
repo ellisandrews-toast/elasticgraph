@@ -24,6 +24,7 @@ module ElasticGraph
         def self.validate_single_cardinality: (SchemaElements::Relationship, error_prefix: ::String) -> ::Array[::String]
         def self.validate_relationship_routability: (SchemaElements::Relationship, error_prefix: ::String) -> ::Array[::String]
         def self.relationship_error_prefix: (SchemaElements::Relationship, ::Array[SchemaElements::Field]) -> ::String
+        def self.validate_has_had_multiple_sources: (Index, indexableType, SchemaElements::Relationship) -> ::Array[::String]
 
         interface _FieldSourceAdapter
           def get_field_source: (SchemaElements::Relationship, Index) {
