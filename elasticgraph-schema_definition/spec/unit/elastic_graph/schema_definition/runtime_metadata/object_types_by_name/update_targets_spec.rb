@@ -1462,7 +1462,7 @@ module ElasticGraph
                   end
                 end
               }.to raise_error Errors::SchemaError, a_string_including(
-                "`Player.statLines` is a `relates_to_many` relationship, but nested `sourced_from` is only supported on a `relates_to_one` relationship."
+                "`Player.statLines` (referenced from `sourced_from` on field(s): `goals`) is a `relates_to_many` relationship, but `sourced_from` is only supported on a `relates_to_one` relationship."
               )
             end
           end
@@ -1661,7 +1661,7 @@ module ElasticGraph
             expect {
               nested_sourced_from_schema(player_statline_dir: :out, player_statline_via: "statLineId")
             }.to raise_error Errors::SchemaError, a_string_including(
-              "`Player.statLine` has an outbound foreign key (`dir: :out`), but `sourced_from` is only supported via inbound foreign key (`dir: :in`) relationships."
+              "`Player.statLine` (referenced from `sourced_from` on field(s): `goals`) has an outbound foreign key (`dir: :out`), but `sourced_from` is only supported via inbound foreign key (`dir: :in`) relationships."
             )
           end
 
@@ -1674,7 +1674,7 @@ module ElasticGraph
                 }
               )
             }.to raise_error Errors::SchemaError, a_string_including(
-              "`Player.statLine` uses an `additional_filter`, but `sourced_from` is not supported on relationships with `additional_filter`."
+              "`Player.statLine` (referenced from `sourced_from` on field(s): `goals`) uses an `additional_filter`, but `sourced_from` is not supported on relationships with `additional_filter`."
             )
           end
 

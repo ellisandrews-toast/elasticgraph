@@ -86,10 +86,22 @@ module ElasticGraph
           end
         end
 
+        # Validates that `relationship` is `relates_to_one`, since a `sourced_from` field copies a value from a
+        # single source record and a `relates_to_many` relationship has no single value to copy. `error_prefix`
+        # identifies the offending relationship (and the `sourced_from` fields that depend on it) in the message.
+        #
+        # Returns a list of any errors found.
+        def self.validate_single_cardinality(relationship, error_prefix:)
+          return [] unless relationship.many?
+
+          ["#{error_prefix} is a `relates_to_many` relationship, but `sourced_from` is only supported on a " \
+            "`relates_to_one` relationship."]
+        end
+
         # Validates that `relationship` can route `sourced_from` source events to the documents they update: it
         # must use an inbound foreign key (so the event carries the key) and no `additional_filter` (which the
         # `sourced_from` update path ignores, so a filtered relationship would silently mismatch). `error_prefix`
-        # identifies the offending relationship in the resulting messages.
+        # identifies the offending relationship (and the `sourced_from` fields that depend on it) in the messages.
         #
         # Returns a list of any errors found.
         def self.validate_relationship_routability(relationship, error_prefix:)
@@ -107,6 +119,14 @@ module ElasticGraph
           end
 
           errors
+        end
+
+        # Builds the prefix of a relationship-related `sourced_from` error: the `Type.relationship` description,
+        # followed by the `sourced_from` fields that depend on it (so the author knows what's affected). Only
+        # called when there are `sourced_fields` (a relationship with none produces no update target to validate).
+        def self.relationship_error_prefix(relationship, sourced_fields)
+          fields_description = sourced_fields.map { |f| "`#{f.name}`" }.join(", ")
+          "`#{relationship.parent_type.name}.#{relationship.name}` (referenced from `sourced_from` on field(s): #{fields_description})"
         end
 
         # Adapter for the `routing_value_source` case for use by `resolve_field_source`.

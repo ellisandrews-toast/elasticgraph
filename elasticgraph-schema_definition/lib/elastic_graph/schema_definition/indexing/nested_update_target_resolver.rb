@@ -42,7 +42,7 @@ module ElasticGraph
         #
         # Returns a tuple of the `update_target` (if valid) and a list of errors.
         def resolve
-          relationship_errors = validate_relationship
+          relationship_errors = validate_relationships
           field_params, field_params_errors = UpdateTargetResolverSupport.resolve_sourced_field_params(
             object_type: object_type,
             related_type: related_type,
@@ -105,20 +105,14 @@ module ElasticGraph
         # Applies validations on the relationships backing nested `sourced_from` fields. Only the leaf must be
         # `relates_to_one` (it's where a value is sourced through), but every relationship in the chain joins on
         # a foreign key that routes the source event, so each must be routable (inbound foreign key, no filter).
-        def validate_relationship
-          errors = [] # : ::Array[::String]
+        def validate_relationships
+          leaf_prefix = UpdateTargetResolverSupport.relationship_error_prefix(relationship, sourced_fields)
 
-          if relationship.many?
-            errors << "`#{object_type.name}.#{relationship.name}` is a `relates_to_many` relationship, but nested " \
-              "`sourced_from` is only supported on a `relates_to_one` relationship."
-          end
-
-          errors + resolved_chain.relationships.flat_map do |chain_relationship|
-            UpdateTargetResolverSupport.validate_relationship_routability(
-              chain_relationship,
-              error_prefix: "`#{chain_relationship.parent_type.name}.#{chain_relationship.name}`"
-            )
-          end
+          UpdateTargetResolverSupport.validate_single_cardinality(relationship, error_prefix: leaf_prefix) +
+            resolved_chain.relationships.flat_map do |chain_relationship|
+              error_prefix = UpdateTargetResolverSupport.relationship_error_prefix(chain_relationship, sourced_fields)
+              UpdateTargetResolverSupport.validate_relationship_routability(chain_relationship, error_prefix: error_prefix)
+            end
         end
 
         # Builds the params identifying which nested element to update: one entry per list segment in the

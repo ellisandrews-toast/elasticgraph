@@ -73,22 +73,11 @@ module ElasticGraph
         # Applies additional validations (beyond what `RelationshipResolver` applies) on relationships that are
         # used by `sourced_from` fields.
         def validate_relationship
-          errors = [] # : ::Array[::String]
+          relationship = resolved_relationship.relationship
+          error_prefix = UpdateTargetResolverSupport.relationship_error_prefix(relationship, sourced_fields)
 
-          if resolved_relationship.relationship.many?
-            errors << "#{relationship_error_prefix} is a `relates_to_many` relationship, but `sourced_from` is only supported on a `relates_to_one` relationship."
-          end
-
-          errors + UpdateTargetResolverSupport.validate_relationship_routability(
-            resolved_relationship.relationship,
-            error_prefix: relationship_error_prefix
-          )
-        end
-
-        # Helper method for building the prefix of relationship-related error messages.
-        def relationship_error_prefix
-          sourced_fields_description = "(referenced from `sourced_from` on field(s): #{sourced_fields.map { |f| "`#{f.name}`" }.join(", ")})"
-          "`#{object_type.name}.#{resolved_relationship.relationship_name}` #{sourced_fields_description}"
+          UpdateTargetResolverSupport.validate_single_cardinality(relationship, error_prefix: error_prefix) +
+            UpdateTargetResolverSupport.validate_relationship_routability(relationship, error_prefix: error_prefix)
         end
 
         # The related type whose source events feed this update target — where `sourced_from` fields are resolved.

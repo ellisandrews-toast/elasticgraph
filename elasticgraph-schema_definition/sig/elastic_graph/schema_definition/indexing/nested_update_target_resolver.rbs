@@ -28,7 +28,7 @@ module ElasticGraph
         def root_type: () -> indexableType
         def root_index: () -> Index
 
-        def validate_relationship: () -> ::Array[::String]
+        def validate_relationships: () -> ::Array[::String]
         def build_path_identifier_params: () -> ::Hash[::String, SchemaArtifacts::RuntimeMetadata::DynamicParam]
         def resolve_field_source: (UpdateTargetResolverSupport::_FieldSourceAdapter) -> [::String?, ::String?]
         def validate_has_had_multiple_sources: () -> ::Array[::String]
