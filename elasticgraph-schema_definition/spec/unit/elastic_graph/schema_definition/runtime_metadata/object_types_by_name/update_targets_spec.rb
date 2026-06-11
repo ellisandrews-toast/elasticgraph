@@ -1369,7 +1369,7 @@ module ElasticGraph
                   on_teams_index: ->(i) { i.route_with "team_owner_id" }
                 )
               }.to raise_error Errors::SchemaError, a_string_including(
-                "Cannot update `Team` documents with nested data from related `statLine` events",
+                "Cannot update `Team` documents with data from related `statLines` events",
                 "`Team` uses custom shard routing but we don't know what `statLines` field to use to route the `Team` update requests",
                 "add a call like this to the `Team.statLines` relationship definition",
                 '`rel.equivalent_field "[StatLine field]", locally_named: "team_owner_id"`'
@@ -1398,7 +1398,7 @@ module ElasticGraph
                   on_teams_index: ->(i) { i.rollover :yearly, "team_created_at" }
                 )
               }.to raise_error Errors::SchemaError, a_string_including(
-                "Cannot update `Team` documents with nested data from related `statLine` events",
+                "Cannot update `Team` documents with data from related `statLines` events",
                 "`Team` uses a rollover index but we don't know what `statLines` timestamp field to use to select an index for the `Team` update requests",
                 "add a call like this to the `Team.statLines` relationship definition",
                 '`rel.equivalent_field "[StatLine field]", locally_named: "team_created_at"`'

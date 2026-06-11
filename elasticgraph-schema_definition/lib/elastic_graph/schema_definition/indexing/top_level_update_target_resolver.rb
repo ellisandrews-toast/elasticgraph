@@ -7,8 +7,8 @@
 # frozen_string_literal: true
 
 require "elastic_graph/schema_artifacts/runtime_metadata/params"
-require "elastic_graph/schema_definition/indexing/sourced_field_params_resolver"
 require "elastic_graph/schema_definition/indexing/update_target_factory"
+require "elastic_graph/schema_definition/indexing/update_target_resolver_support"
 
 module ElasticGraph
   module SchemaDefinition
@@ -21,8 +21,6 @@ module ElasticGraph
       #
       # @private
       class TopLevelUpdateTargetResolver
-        include SourcedFieldParamsResolver
-
         def initialize(
           object_type:,
           resolved_relationship:,
@@ -41,9 +39,14 @@ module ElasticGraph
         # Returns a tuple of the `update_target` (if valid), and a list of errors.
         def resolve
           relationship_errors = validate_relationship
-          top_level_fields_params, top_level_fields_params_errors = resolve_sourced_field_params
-          routing_value_source, routing_error = resolve_field_source(RoutingSourceAdapter)
-          rollover_timestamp_value_source, rollover_timestamp_error = resolve_field_source(RolloverTimestampSourceAdapter)
+          top_level_fields_params, top_level_fields_params_errors = UpdateTargetResolverSupport.resolve_sourced_field_params(
+            object_type: object_type,
+            related_type: related_type,
+            sourced_fields: sourced_fields,
+            field_path_resolver: field_path_resolver
+          )
+          routing_value_source, routing_error = resolve_field_source(UpdateTargetResolverSupport::RoutingSourceAdapter)
+          rollover_timestamp_value_source, rollover_timestamp_error = resolve_field_source(UpdateTargetResolverSupport::RolloverTimestampSourceAdapter)
           equivalent_field_errors = resolved_relationship.relationship.validate_equivalent_fields(field_path_resolver)
 
           all_errors = relationship_errors + top_level_fields_params_errors + equivalent_field_errors + [routing_error, rollover_timestamp_error].compact
@@ -99,61 +102,19 @@ module ElasticGraph
           resolved_relationship.related_type
         end
 
-        # Helper method that assists with resolving `routing_value_source` and `rollover_timestamp_value_source`.
-        # Uses an `adapter` for the differences in these two cases.
-        #
-        # Returns a tuple of the resolved source (if successful) and an error (if invalid).
+        # Resolves a routing/rollover field source via the shared helper, supplying the top-level type, index,
+        # and relationship.
         def resolve_field_source(adapter)
           index_def = object_type.own_index_def # : Index
 
-          field_source_graphql_path_string = adapter.get_field_source(resolved_relationship.relationship, index_def) do |local_need|
-            relationship_name = resolved_relationship.relationship_name
-
-            error = "Cannot update `#{object_type.name}` documents with data from related `#{relationship_name}` events, " \
-              "because #{adapter.cannot_update_reason(object_type, relationship_name)}. To fix it, add a call like this to the " \
-              "`#{object_type.name}.#{relationship_name}` relationship definition: `rel.equivalent_field " \
-              "\"[#{resolved_relationship.related_type.name} field]\", locally_named: \"#{local_need}\"`."
-
-            return [nil, error]
-          end
-
-          if field_source_graphql_path_string
-            field_path = field_path_resolver.resolve_public_path(resolved_relationship.related_type, field_source_graphql_path_string) do |parent_field|
-              !parent_field.type.list?
-            end
-
-            [field_path&.path_in_index, nil]
-          else
-            [nil, nil]
-          end
-        end
-
-        # Adapter for the `routing_value_source` case for use by `resolve_field_source`.
-        #
-        # @private
-        module RoutingSourceAdapter
-          def self.get_field_source(relationship, index, &block)
-            relationship.routing_value_source_for_index(index, &block)
-          end
-
-          def self.cannot_update_reason(object_type, relationship_name)
-            "`#{object_type.name}` uses custom shard routing but we don't know what `#{relationship_name}` field to use " \
-            "to route the `#{object_type.name}` update requests"
-          end
-        end
-
-        # Adapter for the `rollover_timestamp_value_source` case for use by `resolve_field_source`.
-        #
-        # @private
-        module RolloverTimestampSourceAdapter
-          def self.get_field_source(relationship, index, &block)
-            relationship.rollover_timestamp_value_source_for_index(index, &block)
-          end
-
-          def self.cannot_update_reason(object_type, relationship_name)
-            "`#{object_type.name}` uses a rollover index but we don't know what `#{relationship_name}` timestamp field to use " \
-            "to select an index for the `#{object_type.name}` update requests"
-          end
+          UpdateTargetResolverSupport.resolve_field_source(
+            adapter,
+            relationship: resolved_relationship.relationship,
+            index_def: index_def,
+            related_type: related_type,
+            field_path_resolver: field_path_resolver,
+            updated_type: object_type
+          )
         end
       end
     end

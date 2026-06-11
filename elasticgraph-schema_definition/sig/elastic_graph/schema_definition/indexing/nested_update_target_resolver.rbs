@@ -2,8 +2,6 @@ module ElasticGraph
   module SchemaDefinition
     module Indexing
       class NestedUpdateTargetResolver
-        include SourcedFieldParamsResolver
-
         def initialize: (
           object_type: indexableType,
           sourced_fields: ::Array[SchemaElements::Field],
@@ -14,18 +12,16 @@ module ElasticGraph
 
         def resolve: () -> [SchemaArtifacts::RuntimeMetadata::UpdateTarget?, ::Array[::String]]
 
-        # Public to satisfy the `_SourcedFieldParamsHost` interface required by `SourcedFieldParamsResolver`.
+        private
+
         attr_reader object_type: indexableType
         attr_reader sourced_fields: ::Array[SchemaElements::Field]
         attr_reader field_path_resolver: SchemaElements::FieldPath::Resolver
+        attr_reader resolved_chain: ResolvedRelationshipChain
+        attr_reader schema_def_state: State
 
         @related_type: indexableType
         def related_type: () -> indexableType
-
-        private
-
-        attr_reader resolved_chain: ResolvedRelationshipChain
-        attr_reader schema_def_state: State
 
         def relationship: () -> SchemaElements::Relationship
         def root_relationship: () -> SchemaElements::Relationship
@@ -34,24 +30,8 @@ module ElasticGraph
 
         def validate_relationship: () -> ::Array[::String]
         def build_path_identifier_params: () -> ::Hash[::String, SchemaArtifacts::RuntimeMetadata::DynamicParam]
-        def resolve_field_source: (_FieldSourceAdapter) -> [::String?, ::String?]
+        def resolve_field_source: (UpdateTargetResolverSupport::_FieldSourceAdapter) -> [::String?, ::String?]
         def validate_has_had_multiple_sources: () -> ::Array[::String]
-
-        interface _FieldSourceAdapter
-          def get_field_source: (SchemaElements::Relationship, Index) {
-            (::String) -> bot
-          } -> ::String?
-
-          def cannot_update_reason: (indexableType, ::String) -> ::String
-        end
-
-        module RoutingSourceAdapter
-          extend _FieldSourceAdapter
-        end
-
-        module RolloverTimestampSourceAdapter
-          extend _FieldSourceAdapter
-        end
       end
     end
   end
