@@ -1302,30 +1302,11 @@ module ElasticGraph
 
         describe "nested `sourced_from` update targets" do
           it "dumps a nested update target on the source type, keyed by the qualified relationship" do
-            targets = nested_update_targets_by_relationship(nested_sourced_from_schema)
-
-            expect(targets.keys).to contain_exactly("players.statLine")
-            target = targets.fetch("players.statLine")
-            expect(target.type).to eq "Team"
-            expect(target.relationship).to eq "players.statLine"
-            expect(target.script_id).to eq(INDEX_DATA_UPDATE_SCRIPT_ID)
-            expect(target.id_source).to eq "teamId"
-            expect(target.routing_value_source).to eq(nil)
-            expect(target.rollover_timestamp_value_source).to eq(nil)
-            expect(target.top_level_fields_params).to eq({})
-            expect(target.sourced_from_nested_params.field_params).to eq(
-              "goals" => dynamic_param_with(source_path: "goals", cardinality: :one)
-            )
-            expect(target.sourced_from_nested_params.path_identifier_params).to eq(
-              "playerId" => dynamic_param_with(source_path: "playerId", cardinality: :one)
-            )
+            expect_statline_update_target_with(nested_sourced_from_schema)
           end
 
           it "omits `path_identifier_params` for a non-list (object) embedding field, since there is no element to match" do
-            metadata = nested_sourced_from_schema(players_field: "Player!")
-            target = nested_update_targets_by_relationship(metadata).fetch("players.statLine")
-
-            expect(target.sourced_from_nested_params.path_identifier_params).to eq({})
+            expect_statline_update_target_with(nested_sourced_from_schema(players_field: "Player!"), path_identifier_params: {})
           end
 
           context "on a root type that uses custom routing" do
@@ -1344,8 +1325,7 @@ module ElasticGraph
                 end
               end
 
-              target = nested_update_targets_by_relationship(metadata).fetch("players.statLine")
-              expect(target.routing_value_source).to eq "stats.owner_id"
+              expect_statline_update_target_with(metadata, routing_value_source: "stats.owner_id")
             end
 
             it "raises a clear error when the equivalent field is a `graphql_only` field with no indexing path" do
@@ -1385,8 +1365,7 @@ module ElasticGraph
                 on_statline: ->(t) { t.field "created_at", "DateTime" }
               )
 
-              target = nested_update_targets_by_relationship(metadata).fetch("players.statLine")
-              expect(target.rollover_timestamp_value_source).to eq "created_at"
+              expect_statline_update_target_with(metadata, rollover_timestamp_value_source: "created_at")
             end
 
             it "raises a clear error when no `equivalent_field` is configured for the rollover timestamp field" do
@@ -1472,7 +1451,7 @@ module ElasticGraph
               on_player_relationship: ->(r) { r.parent_relationship "Team", "statLines", parent_field_name: "players" }
             )
 
-            expect(nested_update_targets_by_relationship(metadata).keys).to contain_exactly("players.statLine")
+            expect_statline_update_target_with(metadata)
           end
 
           it "discovers an embedding field declared with `indexing_only: true`" do
@@ -1484,7 +1463,7 @@ module ElasticGraph
               end
             })
 
-            expect(nested_update_targets_by_relationship(metadata).keys).to contain_exactly("players.statLine")
+            expect_statline_update_target_with(metadata)
           end
 
           it "raises an error when `parent_relationship` is called twice on the same relationship" do
@@ -1719,7 +1698,7 @@ module ElasticGraph
 
             # The qualified relationship reflects `bench_players`, confirming disambiguation chose that field
             # rather than the also-eligible `players`.
-            expect(nested_update_targets_by_relationship(metadata).keys).to contain_exactly("bench_players.statLine")
+            expect_statline_update_target_with(metadata, relationship: "bench_players.statLine")
           end
 
           it "raises an error when an explicit `parent_field_name:` references a non-existent field" do
@@ -1740,6 +1719,32 @@ module ElasticGraph
             .update_targets
             .to_h { |t| [t.relationship, t] }
             .except(SELF_RELATIONSHIP_NAME)
+        end
+
+        # Asserts the full nested `UpdateTarget` `StatLine` events produce for `Team`, with defaults for the
+        # common `nested_sourced_from_schema` case so each test overrides only the attributes it exercises.
+        def expect_statline_update_target_with(
+          metadata,
+          relationship: "players.statLine",
+          routing_value_source: nil,
+          rollover_timestamp_value_source: nil,
+          field_params: {"goals" => dynamic_param_with(source_path: "goals", cardinality: :one)},
+          path_identifier_params: {"playerId" => dynamic_param_with(source_path: "playerId", cardinality: :one)}
+        )
+          targets = nested_update_targets_by_relationship(metadata)
+          expect(targets.keys).to contain_exactly(relationship)
+
+          target = targets.fetch(relationship)
+          expect(target.type).to eq "Team"
+          expect(target.relationship).to eq relationship
+          expect(target.script_id).to eq(INDEX_DATA_UPDATE_SCRIPT_ID)
+          expect(target.id_source).to eq "teamId"
+          expect(target.routing_value_source).to eq(routing_value_source)
+          expect(target.rollover_timestamp_value_source).to eq(rollover_timestamp_value_source)
+          expect(target.top_level_fields_params).to eq({})
+          expect(target.sourced_from_nested_params.field_params).to eq(field_params)
+          expect(target.sourced_from_nested_params.path_identifier_params).to eq(path_identifier_params)
+          expect(target.metadata_params).to eq(standard_metadata_params(relationship: relationship))
         end
 
         def nested_sourced_from_schema(
