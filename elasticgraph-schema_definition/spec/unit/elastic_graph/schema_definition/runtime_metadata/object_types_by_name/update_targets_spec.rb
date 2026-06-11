@@ -1309,6 +1309,22 @@ module ElasticGraph
             expect_statline_update_target_with(nested_sourced_from_schema(players_field: "Player!"), path_identifier_params: {})
           end
 
+          it "bundles every `sourced_from` field on the nested type into `field_params`" do
+            metadata = nested_sourced_from_schema(
+              on_player: ->(t) {
+                t.field "assists", "Int" do |f|
+                  f.sourced_from "statLine", "assists"
+                end
+              },
+              on_statline: ->(t) { t.field "assists", "Int" }
+            )
+
+            expect_statline_update_target_with(metadata, field_params: {
+              "goals" => dynamic_param_with(source_path: "goals", cardinality: :one),
+              "assists" => dynamic_param_with(source_path: "assists", cardinality: :one)
+            })
+          end
+
           context "on a root type that uses custom routing" do
             it "determines the `routing_value_source` from an `equivalent_field` configured on the root relationship" do
               metadata = nested_sourced_from_schema(
@@ -1749,6 +1765,7 @@ module ElasticGraph
 
         def nested_sourced_from_schema(
           on_team: nil,
+          on_player: nil,
           on_statlines_relationship: nil,
           on_player_relationship: ->(r) { r.parent_relationship "Team", "statLines" },
           player_indexing_only: true,
@@ -1795,6 +1812,8 @@ module ElasticGraph
               t.relates_to_one "statLine", "StatLine", via: player_statline_via, dir: player_statline_dir, indexing_only: player_indexing_only do |r|
                 on_player_relationship.call(r)
               end
+
+              on_player&.call(t)
 
               if index_players
                 t.index("players") { |i| i.has_had_multiple_sources! }
