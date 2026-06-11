@@ -8,6 +8,7 @@
 
 require "elastic_graph/errors"
 require "elastic_graph/schema_artifacts/runtime_metadata/sourced_from_nested_path_segment"
+require "elastic_graph/support/memoizable_data"
 
 module ElasticGraph
   module SchemaDefinition
@@ -15,7 +16,7 @@ module ElasticGraph
       # The result of resolving a relationship chain.
       #
       # @private
-      class ResolvedRelationshipChain < ::Data.define(
+      class ResolvedRelationshipChain < Support::MemoizableData.define(
         :root_relationship,  # Relationship the chain terminated at on the root indexed type
         :leaf_relationship,  # Relationship the chain was resolved from — backs `sourced_from` field(s)
         :path_segments       # Array<PathSegment> - the embedding fields to descend, ordered root-to-leaf
@@ -35,14 +36,15 @@ module ElasticGraph
 
         # The leaf relationship name qualified by its embedding-field path (hence unique per resolved chain)
         def qualified_relationship
-          (path_segments.map { |segment| segment.field.name_in_index } + [leaf_relationship.name_in_index]).join(".")
+          @qualified_relationship ||=
+            (path_segments.map { |segment| segment.field.name_in_index } + [leaf_relationship.name_in_index]).join(".")
         end
 
         # The runtime-metadata segments the painless script uses to navigate this chain: a `ListPathSegment` for
         # each list embedding field (carrying the source field that matches the element) and an `ObjectPathSegment`
         # for each object embedding field.
         def sourced_from_nested_paths
-          path_segments.map do |segment|
+          @sourced_from_nested_paths ||= path_segments.map do |segment|
             if (source_field = segment.source_field_name)
               SchemaArtifacts::RuntimeMetadata::ListPathSegment.new(
                 field: segment.field.name_in_index,

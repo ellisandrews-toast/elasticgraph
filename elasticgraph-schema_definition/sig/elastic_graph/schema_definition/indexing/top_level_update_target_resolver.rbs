@@ -1,7 +1,7 @@
 module ElasticGraph
   module SchemaDefinition
     module Indexing
-      class UpdateTargetResolver
+      class TopLevelUpdateTargetResolver
         include SourcedFieldParamsResolver
 
         def initialize: (

@@ -10,7 +10,7 @@ require "elastic_graph/errors"
 require "elastic_graph/schema_definition/indexing/nested_update_target_resolver"
 require "elastic_graph/schema_definition/indexing/relationship_chain_resolver"
 require "elastic_graph/schema_definition/indexing/relationship_resolver"
-require "elastic_graph/schema_definition/indexing/update_target_resolver"
+require "elastic_graph/schema_definition/indexing/top_level_update_target_resolver"
 
 module ElasticGraph
   module SchemaDefinition
@@ -91,14 +91,14 @@ module ElasticGraph
         end
 
         def resolve_top_level_update_target(object_type, resolved_relationship, sourced_fields)
-          update_target_resolver = UpdateTargetResolver.new(
+          top_level_update_target_resolver = TopLevelUpdateTargetResolver.new(
             object_type: object_type,
             resolved_relationship: resolved_relationship,
             sourced_fields: sourced_fields,
             field_path_resolver: @schema_def_state.field_path_resolver
           )
 
-          update_target, errors = update_target_resolver.resolve
+          update_target, errors = top_level_update_target_resolver.resolve
           errors.each { |error| yield :sourced_field, error }
 
           # Validate that has_had_multiple_sources! has been called when sourced_from is used

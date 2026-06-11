@@ -14,10 +14,12 @@ require "elastic_graph/schema_definition/indexing/update_target_factory"
 module ElasticGraph
   module SchemaDefinition
     module Indexing
-      # Responsible for resolving a nested `parent_relationship` chain and a set of `sourced_from`
-      # fields into an `UpdateTarget` that instructs the indexer to update a nested element within
-      # the root indexed type when a source event arrives. This is the nested analog of
-      # `UpdateTargetResolver`, which handles the top-level (non-nested) `sourced_from` case.
+      # Resolves a relationship and a set of `sourced_from` fields into an `UpdateTarget` that instructs the
+      # indexer how to update a type from the related type's source events. This handles the *nested* case,
+      # where the `sourced_from` fields live on a type embedded within an indexed type (reached via a
+      # `parent_relationship` chain) and the target updates the root indexed type the embedded type nests
+      # within. (The *top-level* case—`sourced_from` fields directly on an indexed type—is handled by
+      # `TopLevelUpdateTargetResolver`.)
       #
       # @private
       class NestedUpdateTargetResolver
@@ -56,7 +58,6 @@ module ElasticGraph
               type: root_type.name,
               relationship: resolved_chain.qualified_relationship,
               id_source: root_relationship.foreign_key,
-              top_level_fields_params: {},
               sourced_from_nested_params: SchemaArtifacts::RuntimeMetadata::SourcedFromNestedParams.new(
                 field_params: field_params,
                 path_identifier_params: build_path_identifier_params

@@ -13,12 +13,14 @@ require "elastic_graph/schema_definition/indexing/update_target_factory"
 module ElasticGraph
   module SchemaDefinition
     module Indexing
-      # Responsible for resolving a relationship and a set of `sourced_from` fields into an `UpdateTarget`
-      # that contains the instructions for how the primary type should be updated from the related type's
-      # source events.
+      # Resolves a relationship and a set of `sourced_from` fields into an `UpdateTarget` that instructs the
+      # indexer how to update a type from the related type's source events. This handles the *top-level* case,
+      # where the `sourced_from` fields live directly on an indexed type and the target updates that same
+      # indexed type. (The *nested* case—`sourced_from` fields on a type embedded within an indexed type—is
+      # handled by `NestedUpdateTargetResolver`.)
       #
       # @private
-      class UpdateTargetResolver
+      class TopLevelUpdateTargetResolver
         include SourcedFieldParamsResolver
 
         def initialize(
@@ -52,7 +54,6 @@ module ElasticGraph
               relationship: resolved_relationship.relationship_name,
               id_source: resolved_relationship.relation_metadata.foreign_key,
               top_level_fields_params: top_level_fields_params,
-              sourced_from_nested_params: SchemaArtifacts::RuntimeMetadata::SourcedFromNestedParams::EMPTY,
               routing_value_source: routing_value_source,
               rollover_timestamp_value_source: rollover_timestamp_value_source
             )

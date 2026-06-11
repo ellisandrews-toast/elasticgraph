@@ -12,7 +12,7 @@ module ElasticGraph
   module SchemaDefinition
     module Indexing
       # Shared logic for resolving a set of `sourced_from` fields into the params map that pulls each field's
-      # value from its source path on the related type. Used by both `UpdateTargetResolver` (top-level
+      # value from its source path on the related type. Used by both `TopLevelUpdateTargetResolver` (top-level
       # `sourced_from`) and `NestedUpdateTargetResolver` (nested `sourced_from`), which resolve the same way
       # but build different update targets around the result.
       #

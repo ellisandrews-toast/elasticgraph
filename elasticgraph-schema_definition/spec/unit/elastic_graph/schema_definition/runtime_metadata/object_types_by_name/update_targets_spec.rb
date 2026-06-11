@@ -451,7 +451,8 @@ module ElasticGraph
           id_source:,
           top_level_fields_params:,
           relationship:, routing_value_source: nil,
-          rollover_timestamp_value_source: nil
+          rollover_timestamp_value_source: nil,
+          sourced_from_nested_params: SchemaArtifacts::RuntimeMetadata::SourcedFromNestedParams::EMPTY
         )
           expect(update_targets.count { |t| t.type == "Widget" }).to eq(1)
           widget_target = update_targets.find { |t| t.type == "Widget" }
@@ -464,6 +465,7 @@ module ElasticGraph
           expect(widget_target.routing_value_source).to eq(routing_value_source)
           expect(widget_target.rollover_timestamp_value_source).to eq(rollover_timestamp_value_source)
           expect(widget_target.top_level_fields_params).to eq(top_level_fields_params)
+          expect(widget_target.sourced_from_nested_params).to eq(sourced_from_nested_params)
           expect(widget_target.metadata_params).to eq(standard_metadata_params(relationship: relationship))
         end
 
