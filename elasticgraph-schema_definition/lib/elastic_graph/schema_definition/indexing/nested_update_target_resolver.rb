@@ -108,7 +108,7 @@ module ElasticGraph
         def validate_relationships
           leaf_prefix = UpdateTargetResolverSupport.relationship_error_prefix(relationship, sourced_fields)
 
-          UpdateTargetResolverSupport.validate_single_cardinality(relationship, error_prefix: leaf_prefix) +
+          UpdateTargetResolverSupport.validate_relationship_cardinality(relationship, error_prefix: leaf_prefix) +
             resolved_chain.relationships.flat_map do |chain_relationship|
               error_prefix = UpdateTargetResolverSupport.relationship_error_prefix(chain_relationship, sourced_fields)
               UpdateTargetResolverSupport.validate_relationship_routability(chain_relationship, error_prefix: error_prefix)

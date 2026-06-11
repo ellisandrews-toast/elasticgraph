@@ -91,7 +91,7 @@ module ElasticGraph
         # identifies the offending relationship (and the `sourced_from` fields that depend on it) in the message.
         #
         # Returns a list of any errors found.
-        def self.validate_single_cardinality(relationship, error_prefix:)
+        def self.validate_relationship_cardinality(relationship, error_prefix:)
           return [] unless relationship.many?
 
           ["#{error_prefix} is a `relates_to_many` relationship, but `sourced_from` is only supported on a " \
