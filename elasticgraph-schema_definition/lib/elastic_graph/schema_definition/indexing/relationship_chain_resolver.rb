@@ -7,6 +7,7 @@
 # frozen_string_literal: true
 
 require "elastic_graph/errors"
+require "elastic_graph/schema_artifacts/runtime_metadata/params"
 require "elastic_graph/schema_artifacts/runtime_metadata/sourced_from_nested_path_segment"
 require "elastic_graph/support/memoizable_data"
 
@@ -65,6 +66,19 @@ module ElasticGraph
               )
             end
           end
+        end
+
+        # The params identifying which nested element to update at each level: one entry per list segment,
+        # pulling the matching value from the segment's foreign key on the source event. Object segments have no
+        # ambiguity, so they contribute no identifier.
+        def path_identifier_params
+          @path_identifier_params ||= path_segments.filter_map do |segment|
+            source_field = segment.source_field_name
+            next unless source_field
+
+            param = SchemaArtifacts::RuntimeMetadata::DynamicParam.new(source_path: source_field, cardinality: :one)
+            [source_field, param]
+          end.to_h
         end
       end
 

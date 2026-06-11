@@ -66,7 +66,7 @@ module ElasticGraph
               id_source: root_relationship.foreign_key,
               sourced_from_nested_params: SchemaArtifacts::RuntimeMetadata::SourcedFromNestedParams.new(
                 field_params: field_params,
-                path_identifier_params: build_path_identifier_params
+                path_identifier_params: resolved_chain.path_identifier_params
               ),
               routing_value_source: routing_value_source,
               rollover_timestamp_value_source: rollover_timestamp_value_source
@@ -113,23 +113,6 @@ module ElasticGraph
               error_prefix = UpdateTargetResolverSupport.relationship_error_prefix(chain_relationship, sourced_fields)
               UpdateTargetResolverSupport.validate_relationship_routability(chain_relationship, error_prefix: error_prefix)
             end
-        end
-
-        # Builds the params identifying which nested element to update: one entry per list segment in the
-        # chain, pulling the matching value from the segment's foreign key on the source event. Object
-        # segments have no ambiguity, so they contribute no identifier.
-        def build_path_identifier_params
-          resolved_chain.path_segments.filter_map do |segment|
-            source_field = segment.source_field_name
-            next unless source_field
-
-            param = SchemaArtifacts::RuntimeMetadata::DynamicParam.new(
-              source_path: source_field,
-              cardinality: :one
-            )
-
-            [source_field, param]
-          end.to_h
         end
 
         # Resolves a routing/rollover field source via the shared helper, supplying the root type, index, and
