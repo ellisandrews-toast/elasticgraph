@@ -21,6 +21,11 @@ module ElasticGraph
           updated_type: indexableType
         ) -> [::String?, ::String?]
 
+        def self.validate_relationship_routability: (
+          SchemaElements::Relationship,
+          error_prefix: ::String
+        ) -> ::Array[::String]
+
         interface _FieldSourceAdapter
           def get_field_source: (SchemaElements::Relationship, Index) {
             (::String) -> bot

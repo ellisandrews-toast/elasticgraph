@@ -2,18 +2,18 @@ module ElasticGraph
   module SchemaDefinition
     module Indexing
       class ResolvedRelationshipChainSuperType
-        attr_reader root_relationship: SchemaElements::Relationship
-        attr_reader leaf_relationship: SchemaElements::Relationship
+        attr_reader relationships: ::Array[SchemaElements::Relationship]
         attr_reader path_segments: ::Array[PathSegment]
 
         def initialize: (
-          root_relationship: SchemaElements::Relationship,
-          leaf_relationship: SchemaElements::Relationship,
+          relationships: ::Array[SchemaElements::Relationship],
           path_segments: ::Array[PathSegment]
         ) -> void
       end
 
       class ResolvedRelationshipChain < ResolvedRelationshipChainSuperType
+        def root_relationship: () -> SchemaElements::Relationship
+        def leaf_relationship: () -> SchemaElements::Relationship
         def root_index: () -> Index
         def register_on_root_index: () -> void
         @qualified_relationship: ::String
@@ -44,15 +44,15 @@ module ElasticGraph
         def resolve_chain: (
           SchemaElements::Relationship,
           ::Array[PathSegment],
-          ::Array[::String],
-          ::Set[SchemaElements::Relationship]
+          ::Array[SchemaElements::Relationship],
+          ::Array[::String]
         ) -> SchemaElements::Relationship?
 
         def resolve_parent_ref: (
           SchemaElements::Relationship,
           SchemaElements::Relationship::ParentRef,
-          ::Array[::String],
-          ::Set[SchemaElements::Relationship]
+          ::Array[SchemaElements::Relationship],
+          ::Array[::String]
         ) -> SchemaElements::Relationship?
 
         def build_path_segment: (
@@ -62,7 +62,6 @@ module ElasticGraph
           ::Array[::String]
         ) -> void
 
-        def validate_chain_relationship: (SchemaElements::Relationship, ::Array[::String]) -> void
         def resolve_field: (SchemaElements::Relationship::ParentRef, indexableType, SchemaElements::Relationship, ::Array[::String]) -> SchemaElements::Field?
         def find_field_by_type: (indexableType, SchemaElements::Relationship, ::Array[::String]) -> SchemaElements::Field?
         def rel_description: (SchemaElements::Relationship) -> ::String

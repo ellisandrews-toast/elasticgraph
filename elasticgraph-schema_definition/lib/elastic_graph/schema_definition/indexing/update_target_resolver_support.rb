@@ -86,6 +86,29 @@ module ElasticGraph
           end
         end
 
+        # Validates that `relationship` can route `sourced_from` source events to the documents they update: it
+        # must use an inbound foreign key (so the event carries the key) and no `additional_filter` (which the
+        # `sourced_from` update path ignores, so a filtered relationship would silently mismatch). `error_prefix`
+        # identifies the offending relationship in the resulting messages.
+        #
+        # Returns a list of any errors found.
+        def self.validate_relationship_routability(relationship, error_prefix:)
+          errors = [] # : ::Array[::String]
+          relation_metadata = relationship.runtime_metadata # : SchemaArtifacts::RuntimeMetadata::Relation
+
+          if relation_metadata.direction == :out
+            errors << "#{error_prefix} has an outbound foreign key (`dir: :out`), but `sourced_from` is only " \
+              "supported via inbound foreign key (`dir: :in`) relationships."
+          end
+
+          unless relation_metadata.additional_filter.empty?
+            errors << "#{error_prefix} uses an `additional_filter`, but `sourced_from` is not supported on " \
+              "relationships with `additional_filter`."
+          end
+
+          errors
+        end
+
         # Adapter for the `routing_value_source` case for use by `resolve_field_source`.
         #
         # @private

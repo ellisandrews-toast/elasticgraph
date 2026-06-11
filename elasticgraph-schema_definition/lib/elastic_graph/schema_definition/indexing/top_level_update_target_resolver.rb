@@ -79,16 +79,10 @@ module ElasticGraph
             errors << "#{relationship_error_prefix} is a `relates_to_many` relationship, but `sourced_from` is only supported on a `relates_to_one` relationship."
           end
 
-          relation_metadata = resolved_relationship.relation_metadata
-          if relation_metadata.direction == :out
-            errors << "#{relationship_error_prefix} has an outbound foreign key (`dir: :out`), but `sourced_from` is only supported via inbound foreign key (`dir: :in`) relationships."
-          end
-
-          unless relation_metadata.additional_filter.empty?
-            errors << "#{relationship_error_prefix} is a `relationship` using an `additional_filter` but `sourced_from` is not supported on relationships with `additional_filter`."
-          end
-
-          errors
+          errors + UpdateTargetResolverSupport.validate_relationship_routability(
+            resolved_relationship.relationship,
+            error_prefix: relationship_error_prefix
+          )
         end
 
         # Helper method for building the prefix of relationship-related error messages.

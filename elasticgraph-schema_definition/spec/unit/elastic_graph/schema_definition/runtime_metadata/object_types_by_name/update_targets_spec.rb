@@ -539,7 +539,7 @@ module ElasticGraph
                     f.sourced_from "workspace", "created_at"
                   end
                 end
-              }.to raise_error_about_workspace_relationship("is a `relationship` using an `additional_filter` but `sourced_from` is not supported on relationships with `additional_filter`.")
+              }.to raise_error_about_workspace_relationship("uses an `additional_filter`, but `sourced_from` is not supported on relationships with `additional_filter`.")
             end
 
             it "raises an error if the referenced relationship is not defined" do
@@ -1661,7 +1661,7 @@ module ElasticGraph
             expect {
               nested_sourced_from_schema(player_statline_dir: :out, player_statline_via: "statLineId")
             }.to raise_error Errors::SchemaError, a_string_including(
-              "`Player.statLine` has an outbound foreign key (`dir: :out`), but nested `sourced_from` is only supported via inbound foreign key (`dir: :in`) relationships."
+              "`Player.statLine` has an outbound foreign key (`dir: :out`), but `sourced_from` is only supported via inbound foreign key (`dir: :in`) relationships."
             )
           end
 
@@ -1674,7 +1674,7 @@ module ElasticGraph
                 }
               )
             }.to raise_error Errors::SchemaError, a_string_including(
-              "`Player.statLine` uses an `additional_filter`, but nested `sourced_from` is not supported on relationships with `additional_filter`."
+              "`Player.statLine` uses an `additional_filter`, but `sourced_from` is not supported on relationships with `additional_filter`."
             )
           end
 

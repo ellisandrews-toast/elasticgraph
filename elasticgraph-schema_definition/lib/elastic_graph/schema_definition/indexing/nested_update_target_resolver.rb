@@ -102,7 +102,9 @@ module ElasticGraph
           @related_type ||= schema_def_state.object_types_by_name.fetch(relationship.related_type.unwrap_non_null.name)
         end
 
-        # Applies validations specific to relationships backing nested `sourced_from` fields.
+        # Applies validations on the relationships backing nested `sourced_from` fields. Only the leaf must be
+        # `relates_to_one` (it's where a value is sourced through), but every relationship in the chain joins on
+        # a foreign key that routes the source event, so each must be routable (inbound foreign key, no filter).
         def validate_relationship
           errors = [] # : ::Array[::String]
 
@@ -111,7 +113,12 @@ module ElasticGraph
               "`sourced_from` is only supported on a `relates_to_one` relationship."
           end
 
-          errors
+          errors + resolved_chain.relationships.flat_map do |chain_relationship|
+            UpdateTargetResolverSupport.validate_relationship_routability(
+              chain_relationship,
+              error_prefix: "`#{chain_relationship.parent_type.name}.#{chain_relationship.name}`"
+            )
+          end
         end
 
         # Builds the params identifying which nested element to update: one entry per list segment in the
