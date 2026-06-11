@@ -51,9 +51,12 @@ module ElasticGraph
           )
           routing_value_source, routing_error = resolve_field_source(UpdateTargetResolverSupport::RoutingSourceAdapter)
           rollover_timestamp_value_source, rollover_timestamp_error = resolve_field_source(UpdateTargetResolverSupport::RolloverTimestampSourceAdapter)
+          # Routing/rollover values resolve from `equivalent_field`s on the root relationship, so they are
+          # validated there (matching how `TopLevelUpdateTargetResolver` validates its own relationship).
+          equivalent_field_errors = root_relationship.validate_equivalent_fields(field_path_resolver)
           has_had_multiple_sources_errors = validate_has_had_multiple_sources
 
-          all_errors = relationship_errors + field_params_errors + has_had_multiple_sources_errors +
+          all_errors = relationship_errors + field_params_errors + equivalent_field_errors + has_had_multiple_sources_errors +
             [routing_error, rollover_timestamp_error].compact
 
           if all_errors.empty?

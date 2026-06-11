@@ -1349,17 +1349,17 @@ module ElasticGraph
               expect(target.routing_value_source).to eq "stats.owner_id"
             end
 
-            it "leaves `routing_value_source` nil when the equivalent field is a `graphql_only` field with no indexing path" do
-              metadata = nested_sourced_from_schema(
-                fetch: "StatLine",
-                on_team: ->(t) { t.field "team_owner_id", "ID!" },
-                on_teams_index: ->(i) { i.route_with "team_owner_id" },
-                on_statlines_relationship: ->(r) { r.equivalent_field "owner_id", locally_named: "team_owner_id" },
-                on_statline: ->(t) { t.field "owner_id", "ID", graphql_only: true }
+            it "raises a clear error when the equivalent field is a `graphql_only` field with no indexing path" do
+              expect {
+                nested_sourced_from_schema(
+                  on_team: ->(t) { t.field "team_owner_id", "ID!" },
+                  on_teams_index: ->(i) { i.route_with "team_owner_id" },
+                  on_statlines_relationship: ->(r) { r.equivalent_field "owner_id", locally_named: "team_owner_id" },
+                  on_statline: ->(t) { t.field "owner_id", "ID", graphql_only: true }
+                )
+              }.to raise_error Errors::SchemaError, a_string_including(
+                "`StatLine.owner_id` (referenced from an `equivalent_field` defined on `Team.statLines`) does not exist"
               )
-
-              target = nested_update_targets_by_relationship(metadata).fetch("players.statLine")
-              expect(target.routing_value_source).to eq(nil)
             end
 
             it "raises a clear error when no `equivalent_field` is configured for the custom routing field" do
@@ -1407,6 +1407,22 @@ module ElasticGraph
           end
 
           describe "validations" do
+            it "raises an error when the nested `sourced_from` field does not exist on the sourced type" do
+              expect {
+                nested_sourced_from_schema(player_goals_source: "nonexistent")
+              }.to raise_error Errors::SchemaError, a_string_including(
+                "`Player.goals` has an invalid `sourced_from` argument: `StatLine.nonexistent` does not exist as an indexing field."
+              )
+            end
+
+            it "raises an error when the nested `sourced_from` field's type does not match its source's type" do
+              expect {
+                nested_sourced_from_schema(player_goals_type: "String")
+              }.to raise_error Errors::SchemaError, a_string_including(
+                "The type of `Player.goals` is `String`, but the type of its source (`StatLine.goals`) is `Int`. These must agree to use `sourced_from`."
+              )
+            end
+
             it "raises an error when the root index has not been configured with `has_had_multiple_sources!`" do
               expect {
                 nested_sourced_from_schema(multiple_sources: false)
@@ -1720,7 +1736,9 @@ module ElasticGraph
           index_players: false,
           multiple_sources: true,
           on_teams_index: nil,
-          on_statline: nil
+          on_statline: nil,
+          player_goals_type: "Int",
+          player_goals_source: "goals"
         )
           object_type_metadata_for fetch do |s|
             s.object_type "Team" do |t|
@@ -1748,8 +1766,8 @@ module ElasticGraph
             s.object_type "Player" do |t|
               t.field "id", "ID!"
 
-              t.field "goals", "Int" do |f|
-                f.sourced_from "statLine", "goals"
+              t.field "goals", player_goals_type do |f|
+                f.sourced_from "statLine", player_goals_source
               end
 
               t.relates_to_one "statLine", "StatLine", via: "playerId", dir: :in, indexing_only: player_indexing_only do |r|
