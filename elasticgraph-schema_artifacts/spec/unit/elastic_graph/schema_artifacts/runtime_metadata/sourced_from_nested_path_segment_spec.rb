@@ -12,16 +12,16 @@ module ElasticGraph
   module SchemaArtifacts
     module RuntimeMetadata
       RSpec.describe SourcedFromNestedPathSegment do
-        it "converts a list segment to a painless param with a camelCased `sourceField`" do
+        it "converts a list segment to a painless hash with a camelCased `sourceField`" do
           segment = ListPathSegment.new(field: "players", source_field: "playerId")
 
-          expect(segment.to_painless_param).to eq("field" => "players", "sourceField" => "playerId")
+          expect(segment.to_painless_hash).to eq("field" => "players", "sourceField" => "playerId")
         end
 
-        it "converts an object segment to a painless param without a `sourceField` (which marks it an object segment)" do
+        it "converts an object segment to a painless hash without a `sourceField` (which marks it an object segment)" do
           segment = ObjectPathSegment.new(field: "roster")
 
-          expect(segment.to_painless_param).to eq("field" => "roster")
+          expect(segment.to_painless_hash).to eq("field" => "roster")
         end
       end
     end

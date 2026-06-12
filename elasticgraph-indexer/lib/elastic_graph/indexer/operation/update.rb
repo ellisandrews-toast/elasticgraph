@@ -150,7 +150,7 @@ module ElasticGraph
           # to them, so we bail out early.
           return initial_params unless update_target.for_normal_indexing?
 
-          initial_params["sourcedFromNestedPaths"] = destination_index_def.sourced_from_nested_paths_for_script
+          initial_params["sourcedFromNestedPaths"] = destination_index_def.sourced_from_nested_paths_as_painless_param
 
           CountAccumulator.merge_list_counts_into(
             initial_params,

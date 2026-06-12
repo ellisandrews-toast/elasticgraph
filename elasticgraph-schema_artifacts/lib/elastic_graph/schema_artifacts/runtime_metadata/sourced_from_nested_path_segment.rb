@@ -40,7 +40,7 @@ module ElasticGraph
         end
 
         # The painless script expects camelCase and discriminates list segments by the presence of `sourceField`.
-        def to_painless_param
+        def to_painless_hash
           {"field" => field, "sourceField" => source_field}
         end
       end
@@ -61,7 +61,7 @@ module ElasticGraph
         end
 
         # No `sourceField`, which is how the painless script tells object segments from list segments.
-        def to_painless_param
+        def to_painless_hash
           {"field" => field}
         end
       end

@@ -130,11 +130,11 @@ module ElasticGraph
           @list_counts_field_paths_for_source[source] ||= identify_list_counts_field_paths_for_source(source)
         end
 
-        # Nested `sourced_from` paths in the form the painless `index_data` script consumes, keyed by
-        # qualified relationship. Empty when the index has no nested sourced fields.
-        def sourced_from_nested_paths_for_script
-          @sourced_from_nested_paths_for_script ||= sourced_from_nested_paths_by_qualified_relationship.transform_values do |segments|
-            segments.map(&:to_painless_param)
+        # The value of the painless `index_data` script's `sourcedFromNestedPaths` param: nested `sourced_from`
+        # paths keyed by qualified relationship. Empty when the index has no nested sourced fields.
+        def sourced_from_nested_paths_as_painless_param
+          @sourced_from_nested_paths_as_painless_param ||= sourced_from_nested_paths_by_qualified_relationship.transform_values do |segments|
+            segments.map(&:to_painless_hash)
           end
         end
 

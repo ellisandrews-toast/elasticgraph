@@ -16,7 +16,7 @@ module ElasticGraph
       def accessible_from_queries?: () -> bool
       def known_related_query_rollover_indices: () -> ::Array[IndexDefinition::RolloverIndex]
       def list_counts_field_paths_for_source: (::String) -> ::Set[::String]
-      def sourced_from_nested_paths_for_script: () -> ::Hash[::String, ::Array[::Hash[::String, ::String]]]
+      def sourced_from_nested_paths_as_painless_param: () -> ::Hash[::String, ::Array[::Hash[::String, ::String]]]
     end
 
     # Defines methods of the _IndexDefinition interface that each specific implementation must provide.
